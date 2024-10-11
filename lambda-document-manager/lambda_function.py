@@ -62,23 +62,17 @@ vectorIndexName = os.environ.get('vectorIndexName')
 enableImageExtraction = 'true'
 enablePageImageExraction = 'true'
 
-# get auth
-region = os.environ.get('AWS_REGION', 'us-west-2')
-print('region: ', region)
-service = "aoss"  
-
-credentials = boto3.Session().get_credentials()
-awsauth = AWSV4SignerAuth(credentials, region, service)
-
 os_client = OpenSearch(
     hosts = [{
         'host': opensearch_url.replace("https://", ""), 
         'port': 443
     }],
-    http_auth=awsauth,
+    http_compress = True,
+    http_auth=(opensearch_account, opensearch_passwd),
     use_ssl = True,
     verify_certs = True,
-    connection_class=RequestsHttpConnection,
+    ssl_assert_hostname = False,
+    ssl_show_warn = False,
 )
 
 def delete_document_if_exist(metadata_key):
