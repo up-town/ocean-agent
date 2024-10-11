@@ -37,6 +37,13 @@ callLogTableName = os.environ.get('callLogTableName')
 path = os.environ.get('path')
 doc_prefix = s3_prefix+'/'
 debugMessageMode = os.environ.get('debugMessageMode', 'false')
+opensearch_account = os.environ.get('opensearch_account')
+opensearch_passwd = os.environ.get('opensearch_passwd')
+opensearch_url = os.environ.get('opensearch_url')
+enalbeParentDocumentRetrival = os.environ.get('enalbeParentDocumentRetrival')
+vectorIndexName = os.environ.get('vectorIndexName')
+index_name = vectorIndexName
+
 projectName = os.environ.get('projectName')
 LLM_for_chat = json.loads(os.environ.get('LLM_for_chat'))
 LLM_for_multimodal = json.loads(os.environ.get('LLM_for_multimodal'))
@@ -45,11 +52,6 @@ selected_chat = 0
 selected_multimodal = 0
 selected_embedding = 0
 useEnhancedSearch = False
-opensearch_url = os.environ.get('opensearch_url')
-enalbeParentDocumentRetrival = os.environ.get('enalbeParentDocumentRetrival')
-
-vectorIndexName = os.environ.get('vectorIndexName')
-index_name = vectorIndexName
     
 multi_region_models = [   # claude sonnet 3.0
     {   
@@ -690,6 +692,19 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     
     return relevant_documents
 
+os_client = OpenSearch(
+    hosts = [{
+        'host': opensearch_url.replace("https://", ""), 
+        'port': 443
+    }],
+    http_compress = True,
+    http_auth=(opensearch_account, opensearch_passwd),
+    use_ssl = True,
+    verify_certs = True,
+    ssl_assert_hostname = False,
+    ssl_show_warn = False,
+)
+
 def get_parent_content(parent_doc_id):
     try:
         response = os_client.search(
@@ -738,19 +753,17 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
     relevant_docs = []
     
     bedrock_embedding = get_embedding()
-    
+       
     vectorstore_opensearch = OpenSearchVectorSearch(
-        index_name=index_name,
-        #is_aoss = True,
+        index_name = index_name,
+        is_aoss = False,
+        ef_search = 1024, # 512(default)
+        m=48,
         #engine="faiss",  # default: nmslib
         embedding_function = bedrock_embedding,
-        opensearch_url = opensearch_url,
-        http_auth=awsauth,
-        connection_class = RequestsHttpConnection,
-        use_ssl = True,
-        verify_certs = True,
-        http_compress = True,
-    )      
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+    )  
     
     if enalbeParentDocumentRetrival == 'true': # parent/child chunking
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, text, top_k)

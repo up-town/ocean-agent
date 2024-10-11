@@ -36,6 +36,8 @@ meta_prefix = "metadata/"
 enableParallelSummary = os.environ.get('enableParallelSummary')
 enalbeParentDocumentRetrival = os.environ.get('enalbeParentDocumentRetrival')
 
+opensearch_account = os.environ.get('opensearch_account')
+opensearch_passwd = os.environ.get('opensearch_passwd')
 opensearch_url = os.environ.get('opensearch_url')
 sqsUrl = os.environ.get('sqsUrl')
 doc_prefix = s3_prefix+'/'
@@ -79,6 +81,7 @@ os_client = OpenSearch(
     connection_class=RequestsHttpConnection,
 )
 
+
 def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")
@@ -94,36 +97,9 @@ def delete_document_if_exist(metadata_key):
             ids = json.loads(meta)['ids']
             print('ids: ', ids)
             
-            _ids = []
-            for id in ids:
-                response = os_client.search(
-                    body = {
-                        'size': 1,
-                        'query': {
-                            "match": {"id": id}
-                            #"term": {"query": parent_doc_id}
-                        }
-                    },
-                    index = index_name
-                )
-                # print(f"id: {id}, response:{response}")
-                        
-                if len(response['hits']['hits']):
-                    _id = response['hits']['hits'][0]['_id'] 
-                    print('_id: ', _id)      
-                    _ids.append(_id)
-            print('_ids: ', _ids)
-            
-            # delete _ids
-            for _id in _ids:
-                response = os_client.delete(
-                    index = index_name,
-                    id = _id
-                )
-                print(f"{_id}: {response}")
-            
-            #result = vectorstore.delete(_ids)
-            #print('result: ', result)   
+            # delete ids
+            result = vectorstore.delete(ids)
+            print('result: ', result)   
             
             # delete files 
             files = json.loads(meta)['files']
@@ -139,7 +115,7 @@ def delete_document_if_exist(metadata_key):
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
-        # raise Exception ("Not able to create meta file")
+        raise Exception ("Not able to create meta file")
 
 def get_chat():
     global selected_chat
@@ -248,20 +224,16 @@ def get_embedding():
     
     return bedrock_embedding
 
-bedrock_embedding = get_embedding()
+bedrock_embeddings = get_embedding()
 
 index_name = vectorIndexName
 vectorstore = OpenSearchVectorSearch(
-    index_name=index_name,
-    is_aoss = True,
-    engine="faiss",  # default: nmslib
-    embedding_function = bedrock_embedding,
+    index_name=index_name,  
+    is_aoss = False,
+    #engine="faiss",  # default: nmslib
+    embedding_function = bedrock_embeddings,
     opensearch_url = opensearch_url,
-    http_auth=awsauth,
-    connection_class = RequestsHttpConnection,
-    #use_ssl = True,
-    #verify_certs = True,
-    #http_compress = True,
+    http_auth=(opensearch_account, opensearch_passwd),
 )  
 
 def store_document_for_opensearch(file_type, key):
