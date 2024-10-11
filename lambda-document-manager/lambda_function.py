@@ -81,7 +81,6 @@ os_client = OpenSearch(
     connection_class=RequestsHttpConnection,
 )
 
-
 def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")
