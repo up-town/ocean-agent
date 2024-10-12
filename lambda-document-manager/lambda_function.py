@@ -1467,7 +1467,7 @@ def lambda_handler(event, context):
                         print('company: ', company)
                     if 'date' in s3obj['Metadata']:
                         date = s3obj['Metadata']['date']
-                        print('dadateta: ', date)
+                        print('date: ', date)
                 
                 #attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
                 #result = s3_client.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
