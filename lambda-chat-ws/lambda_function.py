@@ -527,9 +527,9 @@ def grade_document_based_on_relevance(conn, question, doc, models, selected):
     chat = get_multi_region_chat(models, selected)
     retrieval_grader = get_retrieval_grader(chat)
     
-    print(f"question: {question}, document:{doc.page_content}")    
+    #print(f"question: {question}, document:{doc.page_content}")    
     score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
-    print(f"score: {score}")
+    #print(f"score: {score}")
     
     grade = score.binary_score    
     if grade == 'yes':
@@ -716,44 +716,24 @@ os_client = OpenSearch(
 )
 
 def get_parent_content(parent_doc_id):
-    try:
-        response = os_client.search(
-            body = {
-                'size': 1,
-                'query': {
-                    "match": {"id": parent_doc_id}
-                    #"term": {"query": parent_doc_id}
-                }
-            },
-            index = index_name
-        )
-        # print(f"parent_doc_id: {parent_doc_id}, response:{response}")
-        
-        text = name = url = ""
-        if len(response['hits']['hits']):
-            _id = response['hits']['hits'][0]['_id'] 
-            print('_id: ', _id)
-            
-            _source = response['hits']['hits'][0]['_source'] 
-            # print('_source: ', _source)            
-            if _source:
-                text = _source['text']
-                #print('text: ', text[:20])
-                metadata = _source['metadata']
-                
-                name = metadata['name']
-                #print('name: ', name)
-                url = metadata['url']
-                #print('url: ', url) 
-                doc_level = metadata['doc_level']
-                #print('doc_level: ', doc_level)        
-        return text, name, url
+    response = os_client.get(
+        index=index_name, 
+        id = parent_doc_id
+    )
     
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                    
-        # raise Exception ("Not able to request to LLM")
-        return "", "", ""
+    source = response['_source']                            
+    # print('parent_doc: ', source['text'])   
+    
+    metadata = source['metadata']    
+    #print('name: ', metadata['name'])   
+    #print('url: ', metadata['url'])   
+    #print('doc_level: ', metadata['doc_level']) 
+    
+    url = ""
+    if "url" in metadata:
+        url = metadata['url']
+    
+    return source['text'], metadata['name'], url
 
 def get_answer_using_opensearch(chat, text, connectionId, requestId):    
     global reference_docs
