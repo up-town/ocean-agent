@@ -915,13 +915,12 @@ def load_document(file_type, key):
                     
                     from datetime import datetime
                     d = datetime.strptime(rating_date, '%d %B %Y')
-                    timeStr = str(d)[:10]
-                    print('subject_company: ', subject_company, ', rating_date: ', timeStr)
+                    # print('subject_company: ', subject_company, ', rating_date: ', str(d)[:10])
 
                     global ocean_profile
                     ocean_profile = {
                         "subject_company": subject_company, 
-                        "rating_date": timeStr 
+                        "rating_date": str(d)[:10] 
                     }
                     print('ocean_profile: ', ocean_profile)
                     
