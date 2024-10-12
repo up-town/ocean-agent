@@ -667,8 +667,8 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
         k = top_k*2,  
         pre_filter={"doc_level": {"$eq": "child"}}
     )
-    print('result: ', result)
-            
+    # print('result: ', result)
+                
     relevant_documents = []
     docList = []
     for re in result:
@@ -676,20 +676,28 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
             parent_doc_id = re[0].metadata['parent_doc_id']
             doc_level = re[0].metadata['doc_level']
             print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
-                    
+                        
             if doc_level == 'child':
                 if parent_doc_id in docList:
                     print('duplicated!')
                 else:
                     relevant_documents.append(re)
                     docList.append(parent_doc_id)
-                    
+                        
                     if len(relevant_documents)>=top_k:
-                        break
-                                
+                        break                                
     # print('lexical query result: ', json.dumps(response))
-    print('relevant_documents: ', relevant_documents)
     
+    for i, doc in enumerate(relevant_documents):
+        #print('doc: ', doc[0])
+        #print('doc content: ', doc[0].page_content)
+        
+        if len(doc[0].page_content)>=100:
+            text = doc[0].page_content[:100]
+        else:
+            text = doc[0].page_content            
+        print(f"--> vector search doc[{i}]: {text}, metadata:{doc[0].metadata}")        
+
     return relevant_documents
 
 os_client = OpenSearch(
