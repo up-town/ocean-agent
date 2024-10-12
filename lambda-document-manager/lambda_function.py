@@ -255,13 +255,13 @@ def store_document_for_opensearch(file_type, key):
     ))
         
     # table
-    for i, table in enumerate(tables):
+    for table in tables:
         docs.append(Document(
             page_content=table['body'],
             metadata={
                 'name': table['name'],
                 'url': path+parse.quote(table['name']),
-                'page': str(i),
+                'page': table['page'],
                 'subject_company': subject_company,
                 'rating_date': rating_date
             }
@@ -506,7 +506,7 @@ def add_to_opensearch(docs, key):
                     _id = parent_doc_ids[i]
                     sub_docs = child_splitter.split_documents([doc])
                     
-                    page = company = date = ""
+                    page = subject_company = rating_date = ""
                     if "page" in doc.metadata:
                         page = doc.metadata["page"]
                     if "subject_company" in doc.metadata:
