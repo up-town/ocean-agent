@@ -34,8 +34,6 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, text, top_k)
                         
         for i, document in enumerate(relevant_documents):
-            print(f'## Document(opensearch-vector) {i+1}: {document}')
-            
             parent_doc_id = document[0].metadata['parent_doc_id']
             doc_level = document[0].metadata['doc_level']
             
@@ -59,8 +57,6 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         )
         
         for i, document in enumerate(relevant_documents):
-            print(f'## Document(opensearch-vector) {i+1}: {document}')
-            
             name = document[0].metadata['name']
             url = document[0].metadata['url']
             content = document[0].page_content
@@ -82,14 +78,11 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
             
     relevant_context = ""
     for i, document in enumerate(filtered_docs):
-        print(f"{i}: {document}")
         if document.page_content:
             content = document.page_content
             
         relevant_context = relevant_context + content + "\n\n"
         
-    print('relevant_context: ', relevant_context)
-
     msg = query_using_RAG_context(connectionId, requestId, chat, relevant_context, text)
     
     reference_docs += filtered_docs
