@@ -999,8 +999,8 @@ def load_document(file_type, key):
                             img_meta = {
                                 "ext": 'png',
                                 "page": str(i),
-                                "subject_company": ocean_profile['subject_company'],
-                                "rating_date": ocean_profile['rating_date']
+                                "company": ocean_profile['subject_company'],
+                                "date": ocean_profile['rating_date']
                             }
                         else: 
                             img_meta = {
