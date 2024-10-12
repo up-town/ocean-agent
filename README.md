@@ -252,7 +252,9 @@ def get_profile_of_doc(content: str):
 
 ![noname](https://github.com/user-attachments/assets/151af07e-6894-435e-a804-4926bf6bd8c5)
 
-이제 "Agentic RAG" 메뉴로 이동하여 "Suzano와 Delta Corp Shipping을 비교해주세요."라고 다시 입력합니다. 
+이제 "Agentic RAG" 메뉴로 이동하여 "Suzano와 Delta Corp Shipping을 비교해주세요."라고 다시 입력합니다. RAG에서는 2가지 검색이 필요한 질문을 잘 처리하지 못하였지만, Agentic RAG는 아래와 같이 두 회사를 잘 비교하고 있습니다.
+
+![noname](https://github.com/user-attachments/assets/fd540892-8cbe-4cba-9886-e7d45e48bc75)
 
 이때의 LangSmith의 로그를 확인하면, 아래와 같이 OpenSearch로 "Suzano"와 "Delta Corp Shipping"을 각각 조회하여 얻은 결과를 가지고 최종 답변을 얻은것을 알 수 있습니다. 이와같이 [query decomposition](https://github.com/kyopark2014/rag-with-reflection)을 이용하면, RAG 검색의 결과를 향상 시킬 수 있습니다.
 
