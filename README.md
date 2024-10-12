@@ -211,15 +211,11 @@ def get_profile_of_doc(content: str):
         structured_llm = chat.with_structured_output(Profile, include_raw=True)
     
         info = structured_llm.invoke(content)
-        print(f'attempt: {attempt}, info: {info}')
             
         if not info['parsed'] == None:
             parsed_info = info['parsed']
             subject_company = parsed_info.subject_company
-            rating_date = parsed_info.rating_date
-                            
-            print('subject_company: ', subject_company)            
-            print('rating_date: ', rating_date)
+            rating_date = parsed_info.rating_date                            
             break
     return subject_company, rating_date        
 ```
