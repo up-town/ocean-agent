@@ -43,3 +43,38 @@ def get_profile_of_doc(content: str):
     return subject_company, rating_date        
 ```
 
+## 직접 실습 해보기
+
+### 사전 준비 사항
+
+이 솔루션을 사용하기 위해서는 사전에 아래와 같은 준비가 되어야 합니다.
+
+- [AWS Account 생성](https://repost.aws/ko/knowledge-center/create-and-activate-aws-account)에 따라 계정을 준비합니다.
+
+### CDK를 이용한 인프라 설치
+
+본 실습에서는 us-west-2 리전을 사용합니다. [인프라 설치](./deployment.md)에 따라 CDK로 인프라 설치를 진행합니다. 
+
+## 실행결과
+
+채팅 메뉴에서 "RAG Knowledge Base"를 선택한 후에 "교보 다이렉트 보험에 대해 설명해주세요."라고 입력하면 아래와 같이 RAG를 통해 얻어진 정보와 관련 문서를 확인할 수 있습니다.
+
+![image](https://github.com/user-attachments/assets/ff287438-ca1d-4d52-a718-c1c67dac597f)
+
+
+## 결론
+
+OpenSearch를 활용하여 RAG를 생성하고, 기업 정보를 저장하여 분석할 수 있었습니다. 또한 Agentic RAG를 구성하여 RAG뿐 아니라 일반 대화와 웹검색을 구현할 수 있습니다. 여기서는 인프라를 효율적으로 관리하기 위하여 AWS CDK로 OpenSearch를 설치하고 유지보수 및 변화하는 트래픽 처리에 유용한 서버리스 서비스중심으로 시스템을 구성하였습니다. 
+
+
+## 리소스 정리하기 
+
+더이상 인프라를 사용하지 않는 경우에 아래처럼 모든 리소스를 삭제할 수 있습니다. 
+
+1) [API Gateway Console](https://us-west-2.console.aws.amazon.com/apigateway/main/apis?region=us-west-2)로 접속하여 "api-chatbot-for-ocean-agent", "api-ocean-agent"을 삭제합니다.
+
+2) [Cloud9 Console](https://us-west-2.console.aws.amazon.com/cloud9control/home?region=us-west-2#/)에 접속하여 아래의 명령어로 전체 삭제를 합니다.
+
+```text
+cd ~/environment/langgraph-agent/cdk-langgraph-agent/ && cdk destroy --all
+```
