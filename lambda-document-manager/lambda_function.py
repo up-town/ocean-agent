@@ -255,12 +255,13 @@ def store_document_for_opensearch(file_type, key):
     ))
         
     # table
-    for table in tables:
+    for i, table in enumerate(tables):
         docs.append(Document(
             page_content=table['body'],
             metadata={
                 'name': table['name'],
                 'url': path+parse.quote(table['name']),
+                'page': str(i),
                 'subject_company': subject_company,
                 'rating_date': rating_date
             }
@@ -949,6 +950,7 @@ def load_document(file_type, key):
                         
                             tables.append({
                                 "body": tab.to_markdown(),
+                                "page": str(i)
                                 "name": table_image
                             })                    
                             files.append(table_image)
