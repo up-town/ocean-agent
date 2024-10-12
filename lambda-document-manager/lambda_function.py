@@ -79,7 +79,7 @@ os_client = OpenSearch(
     ssl_assert_hostname = False,
     ssl_show_warn = False,
 )
-
+    
 def delete_document_if_exist(metadata_key):
     try: 
         s3r = boto3.resource("s3")

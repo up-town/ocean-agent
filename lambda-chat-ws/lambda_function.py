@@ -150,6 +150,11 @@ def check_tavily_secret(tavily_api_key):
 #tavily_api_key = check_tavily_secret(tavily_api_key)
 #print('The number of valid tavily api keys: ', len(tavily_api_key))
 
+dt_str = '18 January 2024'
+d = datetime.strptime(dt_str, '%d %B %Y')
+timeStr = str(d)[0:19]
+print('timeStr: ',timeStr)
+
 selected_tavily = -1
 if len(tavily_api_key):
     os.environ["TAVILY_API_KEY"] = tavily_api_key[0]
