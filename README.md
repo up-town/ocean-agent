@@ -260,5 +260,5 @@ OpenSearch를 활용하여 RAG를 생성하고, 기업 정보를 저장하여 �
 2) [Cloud9 Console](https://us-west-2.console.aws.amazon.com/cloud9control/home?region=us-west-2#/)에 접속하여 아래의 명령어로 전체 삭제를 합니다.
 
 ```text
-cd ~/environment/langgraph-agent/cdk-langgraph-agent/ && cdk destroy --all
+cd ~/environment/ocean-agent/cdk-ocean-agent/ && cdk destroy --all
 ```
