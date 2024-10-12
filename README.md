@@ -5,6 +5,131 @@
     <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-green">
 </p>
 
+## OpenSearch를 이용한 RAG의 구현
+
+LangChain의 [OpenSearchVectorSearch](https://api.python.langchain.com/en/latest/vectorstores/langchain_community.vectorstores.opensearch_vector_search.OpenSearchVectorSearch.html)을 이용하여 벡터 지식저장소인 Amazon OpenSearch와 연결합니다. 이후 계층적 chunking을 이용하여 관련된 문서를 조회합니다. 
+
+```python
+def get_answer_using_opensearch(chat, text, connectionId, requestId):    
+    global reference_docs
+    
+    msg = ""
+    top_k = 4
+    relevant_docs = []
+    
+    bedrock_embedding = get_embedding()
+       
+    vectorstore_opensearch = OpenSearchVectorSearch(
+        index_name = index_name,
+        is_aoss = False,
+        ef_search = 1024, # 512(default)
+        m=48,
+        #engine="faiss",  # default: nmslib
+        embedding_function = bedrock_embedding,
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+    )  
+    
+    if enalbeParentDocumentRetrival == 'true': # parent/child chunking
+        relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, text, top_k)
+                        
+        for i, document in enumerate(relevant_documents):
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            
+            parent_doc_id = document[0].metadata['parent_doc_id']
+            doc_level = document[0].metadata['doc_level']
+            
+            excerpt, name, url = get_parent_content(parent_doc_id) # use pareant document
+            
+            relevant_docs.append(
+                Document(
+                    page_content=excerpt,
+                    metadata={
+                        'name': name,
+                        'url': url,
+                        'doc_level': doc_level,
+                        'from': 'vector'
+                    },
+                )
+            )
+    else: 
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+            query = text,
+            k = top_k,
+        )
+        
+        for i, document in enumerate(relevant_documents):
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            
+            name = document[0].metadata['name']
+            url = document[0].metadata['url']
+            content = document[0].page_content
+                   
+            relevant_docs.append(
+                Document(
+                    page_content=content,
+                    metadata={
+                        'name': name,
+                        'url': url,
+                        'from': 'vector'
+                    },
+                )
+            )
+
+    filtered_docs = grade_documents(text, relevant_docs) # grading
+    
+    filtered_docs = check_duplication(filtered_docs) # check duplication
+            
+    relevant_context = ""
+    for i, document in enumerate(filtered_docs):
+        print(f"{i}: {document}")
+        if document.page_content:
+            content = document.page_content
+            
+        relevant_context = relevant_context + content + "\n\n"
+        
+    print('relevant_context: ', relevant_context)
+
+    msg = query_using_RAG_context(connectionId, requestId, chat, relevant_context, text)
+    
+    reference_docs += filtered_docs
+           
+    return msg
+```
+
+조회한 문서의 관련도는 아래와 같이 LLM을 이용하여 grading을 수행합니다.
+
+```python
+def grade_documents(question, documents):
+    print("###### grade_documents ######")
+    
+    filtered_docs = []
+    if multi_region == 'enable':  # parallel processing
+        print("start grading...")
+        filtered_docs = grade_documents_using_parallel_processing(question, documents)
+
+    else:
+        # Score each doc    
+        chat = get_chat()
+        retrieval_grader = get_retrieval_grader(chat)
+        for i, doc in enumerate(documents):            
+            score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
+            
+            grade = score.binary_score
+
+            # Document relevant
+            if grade.lower() == "yes":
+                print("---GRADE: DOCUMENT RELEVANT---")
+                filtered_docs.append(doc)
+            # Document not relevant
+            else:
+                print("---GRADE: DOCUMENT NOT RELEVANT---")
+                continue
+    
+    return filtered_docs
+```
+
+
 
 ## Agentic RAG
 
