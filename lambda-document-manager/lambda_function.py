@@ -312,7 +312,7 @@ def store_code_for_opensearch(file_type, key):
     
     return add_to_opensearch(docs, key)
     
-def store_image_for_opensearch(key, img_meta):
+def store_image_for_opensearch(key, page, company, date):
     print('extract text from an image: ', key) 
                                             
     image_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
@@ -359,30 +359,18 @@ def store_image_for_opensearch(key, img_meta):
 
         docs = []        
         if len(contents) > 30:
-            if img_meta['company']:            
-                docs.append(
-                    Document(
-                        page_content=contents,
-                        metadata={
-                            'name': key,
-                            'url': path+parse.quote(key),
-                            'page': img_meta['page'],
-                            'company': img_meta['company'],
-                            'date': img_meta['date']
-                        }
-                    )
-                )         
-            else:       
-                docs.append(
-                    Document(
-                        page_content=contents,
-                        metadata={
-                            'name': key,
-                            'url': path+parse.quote(key),
-                            'page': img_meta['page']
-                        }
-                    )
-                )                                                                                                 
+            docs.append(
+                Document(
+                    page_content=contents,
+                    metadata={
+                        'name': key,
+                        'url': path+parse.quote(key),
+                        'page': page,
+                        'company': company,
+                        'date': date
+                    }
+                )
+            )         
         print('docs size: ', len(docs))
         
         return add_to_opensearch(docs, key)
@@ -502,9 +490,23 @@ def add_to_opensearch(docs, key):
             # parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
             # print('parent_doc_ids: ', parent_doc_ids)
             
+            page = company = date = ""
+            if "page" in docs.metadata:
+                page = docs.metadata["page"]
+            if "company" in docs.metadata:
+                company = docs.metadata["company"]
+            if "date" in docs.metadata:
+                date = docs.metadata["date"]
+                
             for i, doc in enumerate(parent_docs):
                 doc.metadata["doc_level"] = "parent"
-                # print(f"parent_docs[{i}]: {doc}")
+                # print(f"parent_docs[{i}]: {doc}")                
+                if page:
+                    doc.metadata["page"] = page
+                if company:
+                    doc.metadata["company"] = company
+                if date:
+                    doc.metadata["date"] = date
                     
             try:        
                 parent_doc_ids = vectorstore.add_documents(parent_docs, bulk_size = 10000)
@@ -518,7 +520,14 @@ def add_to_opensearch(docs, key):
                     sub_docs = child_splitter.split_documents([doc])
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
-                        _doc.metadata["doc_level"] = "child"
+                        _doc.metadata["doc_level"] = "child"                        
+                        if page:
+                            _doc.metadata["page"] = page
+                        if company:
+                            _doc.metadata["company"] = company
+                        if date:
+                            _doc.metadata["date"] = date
+                        
                     child_docs.extend(sub_docs)
                 # print('child_docs: ', child_docs)
                 
@@ -1480,13 +1489,7 @@ def lambda_handler(event, context):
                     ids = store_code_for_opensearch(file_type, key)  
                                 
                 elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
-                    img_meta = {
-                        'page': page,
-                        "company":company,
-                        "date": date
-                    }
-                    print('img_meta: ', img_meta)
-                    ids = store_image_for_opensearch(key, img_meta)
+                    ids = store_image_for_opensearch(key, page, company, date)
                                                                                                          
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, url=path+parse.quote(key), category=category, documentId=documentId, ids=ids, files=files)
 
