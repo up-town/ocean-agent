@@ -1460,12 +1460,12 @@ def lambda_handler(event, context):
                     
         elif eventName == "ObjectCreated:Put" or eventName == "ObjectCreated:CompleteMultipartUpload":
             size = 0
+            page = company = date = ""
             try:
                 s3obj = s3_client.get_object(Bucket=bucket, Key=key)
                 print(f"Got object: {s3obj}")
                 size = int(s3obj['ContentLength'])    
                 
-                page = company = data = ""
                 if 'Metadata' in s3obj:
                     if 'page' in s3obj['Metadata']:
                         page = s3obj['Metadata']['page']
@@ -1476,12 +1476,6 @@ def lambda_handler(event, context):
                     if 'date' in s3obj['Metadata']:
                         date = s3obj['Metadata']['date']
                         print('dadateta: ', date)
-                img_meta = {
-                    'page': page,
-                    "company":company,
-                    "date": date
-                }
-                print('img_meta: ', img_meta)
                 
                 #attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
                 #result = s3_client.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
@@ -1511,6 +1505,12 @@ def lambda_handler(event, context):
                     ids = store_code_for_opensearch(file_type, key)  
                                 
                 elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
+                    img_meta = {
+                        'page': page,
+                        "company":company,
+                        "date": date
+                    }
+                    print('img_meta: ', img_meta)
                     ids = store_image_for_opensearch(key, img_meta)
                                                                                                          
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, url=path+parse.quote(key), category=category, documentId=documentId, ids=ids, files=files)
