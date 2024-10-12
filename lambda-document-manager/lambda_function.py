@@ -272,47 +272,6 @@ def store_document_for_opensearch(file_type, key):
     
     return ids, files
 
-def store_code_for_opensearch(file_type, key):
-    codes = load_code(file_type, key)  # number of functions in the code
-            
-    if enableParallelSummary=='true':
-        docs = summarize_relevant_codes_using_parallel_processing(codes, key)
-                                
-    else:
-        docs = []
-        for code in codes:
-            start = code.find('\ndef ')
-            end = code.find(':')                    
-            # print(f'start: {start}, end: {end}')
-                                    
-        if start != -1:      
-            function_name = code[start+1:end]
-            # print('function_name: ', function_name)
-                                                
-            chat = get_multimodal()      
-                                        
-            summary = summary_of_code(chat, code, file_type)
-                                            
-            if summary[:len(function_name)]==function_name:
-                summary = summary[summary.find('\n')+1:len(summary)]
-                                                                                        
-            docs.append(
-                Document(
-                    page_content=summary,
-                        metadata={
-                            'name': key,
-                            # 'page':i+1,
-                            #'url': path+doc_prefix+parse.quote(key),
-                            'url': path+key,
-                            'code': code,
-                            'function_name': function_name
-                        }
-                    )
-                )
-    print('docs size: ', len(docs))
-    
-    return add_to_opensearch(docs, key)
-    
 def store_image_for_opensearch(key, page, subject_company, rating_date):
     print('extract text from an image: ', key) 
                                             
@@ -950,7 +909,7 @@ def load_document(file_type, key):
                         
                             tables.append({
                                 "body": tab.to_markdown(),
-                                "page": str(i)
+                                "page": str(i),
                                 "name": table_image
                             })                    
                             files.append(table_image)
@@ -1091,34 +1050,6 @@ def load_document(file_type, key):
     
     return contents, files, tables, subject_company, rating_date
 
-# load a code file from s3
-def load_code(file_type, key):
-    s3r = boto3.resource("s3")
-    doc = s3r.Object(s3_bucket, key)
-    
-    if file_type == 'py':        
-        contents = doc.get()['Body'].read().decode('utf-8')
-        separators = ["\ndef "]
-        #print('contents: ', contents)
-    elif file_type == 'js':
-        contents = doc.get()['Body'].read().decode('utf-8')
-        separators = ["\nfunction ", "\nexports.handler "]
-    
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=50,
-        chunk_overlap=0,
-        #separators=["def ", "\n\n", "\n", ".", " ", ""],
-        separators=separators,
-        length_function = len,
-    ) 
-
-    texts = text_splitter.split_text(contents) 
-    
-    for i, text in enumerate(texts):
-        print(f"Chunk #{i}: {text}")
-                
-    return texts
-
 def isSupported(type):
     for format in supportedFormat:
         if type == format:
@@ -1159,123 +1090,6 @@ def get_parameter(model_type):
             "stop_sequences": [HUMAN_PROMPT]            
         }
         
-def summary_of_code(chat, code, mode):
-    if mode == 'py': 
-        system = (
-            "다음의 <article> tag에는 python code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
-        )
-    elif mode == 'js':
-        system = (
-            "다음의 <article> tag에는 node.js code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
-        )
-    else:
-        system = (
-            "다음의 <article> tag에는 code가 있습니다. code의 전반적인 목적에 대해 설명하고, 각 함수의 기능과 역할을 자세하게 한국어 500자 이내로 설명하세요."
-        )
-    
-    human = "<article>{code}</article>"
-    
-    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
-    print('prompt: ', prompt)
-    
-    chain = prompt | chat    
-    try: 
-        result = chain.invoke(
-            {
-                "code": code
-            }
-        )
-        
-        summary = result.content
-        print('result of code summarization: ', summary)
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                    
-        raise Exception ("Not able to request to LLM")
-    
-    return summary
-
-def summarize_process_for_relevent_code(conn, chat, code, key, region_name):
-    try: 
-        if code.find('\ndef ') != -1:
-            start = code.find('\ndef ')
-            end = code.find(':')   
-        elif code.find('\nfunction ') != -1:
-            start = code.find('\nfunction ')
-            end = code.find('(')   
-        elif code.find('\nexports.') != -1:
-            start = code.find('\nexports.')
-            end = code.find(' =')         
-        else:
-            start = -1
-            end = -1
-              
-        print('code: ', code)                             
-        print(f'start: {start}, end: {end}')
-                    
-        doc = ""    
-        if start != -1:      
-            function_name = code[start+1:end]
-            print('function_name: ', function_name)
-            
-            file_type = key[key.rfind('.')+1:len(key)].lower()
-            print('file_type: ', file_type)
-                            
-            summary = summary_of_code(chat, code, file_type)
-            print(f"summary ({region_name}, {file_type}): {summary}")
-            
-            # print('first line summary: ', summary[:len(function_name)])
-            # print('function name: ', function_name)            
-            if summary[:len(function_name)]==function_name:
-                summary = summary[summary.find('\n')+1:len(summary)]
-
-            doc = Document(
-                page_content=summary,
-                metadata={
-                    'name': key,
-                    # 'url': path+doc_prefix+parse.quote(key),
-                    'url': path+key,
-                    'code': code,
-                    'function_name': function_name
-                }
-            )           
-                        
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)       
-        # raise Exception (f"Not able to summarize: {doc}")               
-    
-    conn.send(doc)    
-    conn.close()
-
-def summarize_relevant_codes_using_parallel_processing(codes, key):
-    relevant_codes = []    
-    processes = []
-    parent_connections = []
-    for code in codes:
-        parent_conn, child_conn = Pipe()
-        parent_connections.append(parent_conn)
-            
-        chat = get_chat()
-        region_name = LLM_for_chat[selected_chat]['bedrock_region']
-
-        process = Process(target=summarize_process_for_relevent_code, args=(child_conn, chat, code, key, region_name))
-        processes.append(process)
-        
-    for process in processes:
-        process.start()
-            
-    for parent_conn in parent_connections:
-        doc = parent_conn.recv()
-        
-        if doc:
-            relevant_codes.append(doc)    
-
-    for process in processes:
-        process.join()
-    
-    return relevant_codes
-
 def extract_text(chat, img_base64):    
     query = "텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
     
@@ -1474,12 +1288,7 @@ def lambda_handler(event, context):
                 # raise Exception ("Not able to get object info") 
             
             if check_supported_type(key, file_type, size): 
-                if file_type == 'py' or file_type == 'js':  # for code
-                    category = file_type
-                #elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
-                #    category = 'img'
-                else:
-                    category = "upload" # for document
+                category = "upload" # for document
                 documentId = get_documentId(key, category)                                
                 print('documentId: ', documentId)
                 
@@ -1487,9 +1296,6 @@ def lambda_handler(event, context):
                 if file_type == 'pdf' or file_type == 'txt' or file_type == 'md' or file_type == 'csv' or file_type == 'pptx' or file_type == 'docx':
                     ids, files = store_document_for_opensearch(file_type, key)   
                                     
-                elif file_type == 'py' or file_type == 'js':
-                    ids = store_code_for_opensearch(file_type, key)  
-                                
                 elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
                     ids = store_image_for_opensearch(key, page, subject_company, rating_date)
                                                                                                          
