@@ -61,6 +61,11 @@ vectorIndexName = os.environ.get('vectorIndexName')
 
 enableImageExtraction = 'true'
 enablePageImageExraction = 'true'
+pdf_profile = 'ocean'
+ocean_profile = {
+    "subject_company": "", # Subject company
+    "rating_date": "" # Rating date
+}
 
 os_client = OpenSearch(
     hosts = [{
@@ -789,8 +794,35 @@ def extract_table_image(page, index, table_count, bbox, key):
     # print('response: ', response)
     
     return folder+fname+'.png'
-                 
+
+from pydantic.v1 import BaseModel, Field
+def get_profile_of_doc(profile_page: str):
+    """Provide profile of document."""
+    
+    class Profile(BaseModel):
+        subject_company: str = Field(description="The value of 'Subject company'")
+        rating_date: str = Field(description="The value of 'Rating data'")
+    
+    subject_company = rating_date = ""
+    for attempt in range(5):
+        chat = get_chat()
+        structured_llm = chat.with_structured_output(Profile, include_raw=True)
+    
+        info = structured_llm.invoke(profile_page)
+        print(f'attempt: {attempt}, info: {info}')
+            
+        if not info['parsed'] == None:
+            parsed_info = info['parsed']
+            subject_company = parsed_info.subject_company
+            rating_date = parsed_info.rating_date
+                            
+            print('subject_company: ', subject_company)            
+            print('rating_date: ', rating_date)
+            break
+    return subject_company, rating_date        
+                         
 # load documents from s3 for pdf and txt
+profile_page = ""
 def load_document(file_type, key):
     s3r = boto3.resource("s3")
     doc = s3r.Object(s3_bucket, key)
@@ -849,8 +881,23 @@ def load_document(file_type, key):
                             
                 print(f"# of images of page[{i}] = {nImage}")
                 nImages.append(nImage)
-
+                
+                # extract metadata
+                if pdf_profile == 'ocean' and i==1:
+                    profile_page = page
+                    
             contents = '\n'.join(texts)
+            
+            # extract meta of pdf document
+            if pdf_profile == 'ocean':
+                print('profile_page: ', profile_page)
+                #ocean_profile = {
+                #    "subject_company": "", # Subject company
+                #    "rating_date": "" # Rating date
+                #}
+                
+                subject_company, rating_date = get_profile_of_doc(profile_page)
+                print('subject_company: ', subject_company, ', rating_date: ', rating_date)
             
             pages = fitz.open(stream=Byte_contents, filetype='pdf')     
 
