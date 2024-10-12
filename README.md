@@ -6,6 +6,69 @@
 </p>
 
 
+## Agentic RAG
+
+Agent로 RAG가 포함된 workflow를 아래와 같이 구성합니다. Tool에는 시간(get_current_time), 도서(get_book_list), 날씨(get_weather_info)와 같은 기본 기능뿐 아니라, 웹검색(search_by_tavily)과 기업정보 검색(search_by_opensearch)을 위한 기능을 포함하고 있습니다. 
+
+```python
+class State(TypedDict):
+    messages: Annotated[list, add_messages]
+
+tools = [get_current_time, get_book_list, get_weather_info, search_by_tavily, search_by_opensearch]
+tool_node = ToolNode(tools)
+
+def buildChatAgent():
+    workflow = StateGraph(State)
+
+    workflow.add_node("agent", call_model)
+    workflow.add_node("action", tool_node)
+    workflow.add_edge(START, "agent")
+    workflow.add_conditional_edges(
+        "agent",
+        should_continue,
+        {
+            "continue": "action",
+            "end": END,
+        },
+    )
+    workflow.add_edge("action", "agent")
+
+    return workflow.compile()
+```
+
+call_model 노드에서는 agent의 이름롸 역할을 지정하고, 이전 대화와 Tool등으로 부터 얻어진 정보를 활용하여 적절한 답변을 수행합니다.
+
+```python
+def call_model(state: State):
+    print("###### call_model ######")
+    
+    if isKorean(state["messages"][0].content)==True:
+        system = (
+            "당신의 이름은 서연이고, 질문에 친근한 방식으로 대답하도록 설계된 대화형 AI입니다."
+            "상황에 맞는 구체적인 세부 정보를 충분히 제공합니다."
+            "모르는 질문을 받으면 솔직히 모른다고 말합니다."
+            "최종 답변에는 조사한 내용을 반드시 포함합니다."
+        )
+    else: 
+        system = (            
+            "You are a conversational AI designed to answer in a friendly way to a question."
+            "If you don't know the answer, just say that you don't know, don't try to make up an answer."
+            "You will be acting as a thoughtful advisor."    
+        )
+        
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            ("system", system),
+            MessagesPlaceholder(variable_name="messages"),
+        ]
+    )
+    chain = prompt | model
+        
+    response = chain.invoke(state["messages"])
+
+    return {"messages": [response]}
+```
+
 ## 문서 전처리
 
 특정 페이지의 표에는 "Subject company"와 "Rating date"로 해당 문서의 대상과 생성일을 확인할 수 있습니다.
