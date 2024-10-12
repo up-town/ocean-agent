@@ -312,7 +312,7 @@ def store_code_for_opensearch(file_type, key):
     
     return add_to_opensearch(docs, key)
     
-def store_image_for_opensearch(key, page, company, date):
+def store_image_for_opensearch(key, page, subject_company, rating_date):
     print('extract text from an image: ', key) 
                                             
     image_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
@@ -366,8 +366,8 @@ def store_image_for_opensearch(key, page, company, date):
                         'name': key,
                         'url': path+parse.quote(key),
                         'page': page,
-                        'company': company,
-                        'date': date
+                        'subject_company': subject_company,
+                        'rating_date': rating_date
                     }
                 )
             )         
@@ -508,17 +508,17 @@ def add_to_opensearch(docs, key):
                     page = company = date = ""
                     if "page" in doc.metadata:
                         page = doc.metadata["page"]
-                    if "company" in doc.metadata:
-                        company = doc.metadata["company"]
-                    if "date" in doc.metadata:
-                        date = doc.metadata["date"]
+                    if "subject_company" in doc.metadata:
+                        subject_company = doc.metadata["subject_company"]
+                    if "rating_date" in doc.metadata:
+                        rating_date = doc.metadata["rating_date"]
                     
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
                         _doc.metadata["doc_level"] = "child"
                         _doc.metadata["page"] = page
-                        _doc.metadata["company"] = company
-                        _doc.metadata["date"] = date
+                        _doc.metadata["subject_company"] = subject_company
+                        _doc.metadata["rating_date"] = rating_date
                         
                     child_docs.extend(sub_docs)
                 print('child_docs: ', child_docs)
