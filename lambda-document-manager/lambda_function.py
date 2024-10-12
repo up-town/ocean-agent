@@ -62,10 +62,6 @@ vectorIndexName = os.environ.get('vectorIndexName')
 enableImageExtraction = 'true'
 enablePageImageExraction = 'true'
 pdf_profile = 'ocean'
-ocean_profile = {
-    "subject_company": "", # Subject company
-    "rating_date": "" # Rating date
-}
 
 os_client = OpenSearch(
     hosts = [{
@@ -236,7 +232,7 @@ vectorstore = OpenSearchVectorSearch(
 
 def store_document_for_opensearch(file_type, key):
     print('upload to opensearch: ', key) 
-    contents, files, tables = load_document(file_type, key)
+    contents, files, tables, subject_company, rating_date = load_document(file_type, key)
     
     if len(contents) == 0:
         print('no contents: ', key)
@@ -246,48 +242,29 @@ def store_document_for_opensearch(file_type, key):
     print('length: ', len(contents))
     
     docs = []
-    if pdf_profile == 'ocean':
-        # text        
-        docs.append(Document(
-            page_content=contents,
-            metadata={
-                'name': key,
-                'url': path+parse.quote(key),
-                'subject_company': ocean_profile['subject_company'],
-                'rating_date': ocean_profile['rating_date']
-            }
-        ))
+    
+    # text        
+    docs.append(Document(
+        page_content=contents,
+        metadata={
+            'name': key,
+            'url': path+parse.quote(key),
+            'subject_company': subject_company,
+            'rating_date': rating_date
+        }
+    ))
         
-        # table
-        for table in tables:
-            docs.append(Document(
-                page_content=table['body'],
-                metadata={
-                    'name': table['name'],
-                    'url': path+parse.quote(table['name']),
-                    'subject_company': ocean_profile['subject_company'],
-                    'rating_date': ocean_profile['rating_date']
-                }
-            ))  
-    else:
-        # text        
+    # table
+    for table in tables:
         docs.append(Document(
-            page_content=contents,
+            page_content=table['body'],
             metadata={
-                'name': key,
-                'url': path+parse.quote(key)
+                'name': table['name'],
+                'url': path+parse.quote(table['name']),
+                'subject_company': subject_company,
+                'rating_date': rating_date
             }
-        ))
-        
-        # table
-        for table in tables:
-            docs.append(Document(
-                page_content=table['body'],
-                metadata={
-                    'name': table['name'],
-                    'url': path+parse.quote(table['name']),
-                }
-            ))            
+        ))  
     print('docs: ', docs)
 
     ids = add_to_opensearch(docs, key)
@@ -818,6 +795,8 @@ def extract_table_image(page, index, table_count, bbox, key):
     folder = s3_prefix+'/captures/'+objectName+'/'
                                 
     fname = 'table_'+key.split('/')[-1].split('.')[0]+f"_{table_count}"
+    
+    page = company = date = ""
 
     response = s3_client.put_object(
         Bucket=s3_bucket,
@@ -868,6 +847,7 @@ def load_document(file_type, key):
     files = []
     tables = []
     contents = ""
+    subject_company = rating_date = ""
     if file_type == 'pdf':
         Byte_contents = doc.get()['Body'].read()
 
@@ -925,19 +905,14 @@ def load_document(file_type, key):
                     print("---> extract metadata from document")
                     print('content: ', texts[i])
                     
-                    subject_company, rating_date = get_profile_of_doc(texts[i])
+                    subject_company, rating_date_ori = get_profile_of_doc(texts[i])
+                    print('subject_company: ', subject_company)
                     
                     from datetime import datetime
-                    d = datetime.strptime(rating_date, '%d %B %Y')
-                    # print('subject_company: ', subject_company, ', rating_date: ', str(d)[:10])
+                    d = datetime.strptime(rating_date_ori, '%d %B %Y')
+                    rating_date = str(d)[:10] 
+                    print('rating_date: ', rating_date)
 
-                    global ocean_profile
-                    ocean_profile = {
-                        "subject_company": subject_company, 
-                        "rating_date": str(d)[:10] 
-                    }
-                    print('ocean_profile: ', ocean_profile)
-                    
             contents = '\n'.join(texts)
                         
             pages = fitz.open(stream=Byte_contents, filetype='pdf')     
@@ -1013,8 +988,8 @@ def load_document(file_type, key):
                             img_meta = {
                                 "ext": 'png',
                                 "page": str(i),
-                                "company": ocean_profile['subject_company'],
-                                "date": ocean_profile['rating_date']
+                                "company": subject_company,
+                                "date": rating_date
                             }
                         else: 
                             img_meta = {
@@ -1103,7 +1078,7 @@ def load_document(file_type, key):
             print('error message: ', err_msg)        
             # raise Exception ("Not able to load the file")
     
-    return contents, files, tables
+    return contents, files, tables, subject_company, rating_date
 
 # load a code file from s3
 def load_code(file_type, key):
