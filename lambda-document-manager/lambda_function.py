@@ -335,7 +335,7 @@ def store_code_for_opensearch(file_type, key):
     
     return add_to_opensearch(docs, key)
     
-def store_image_for_opensearch(key):
+def store_image_for_opensearch(key, img_meta):
     print('extract text from an image: ', key) 
                                             
     image_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
@@ -379,19 +379,33 @@ def store_image_for_opensearch(key):
         else:
             contents = f"[이미지 요약]\n{image_summary}"
         print('image contents: ', contents)
-        
-        docs = []
+
+        docs = []        
         if len(contents) > 30:
-            docs.append(
-                Document(
-                    page_content=contents,
-                    metadata={
-                        'name': key,
-                        # 'page':i+1,
-                        'url': path+parse.quote(key)
-                    }
-                )
-            )                                                                                                            
+            if img_meta['company']:            
+                docs.append(
+                    Document(
+                        page_content=contents,
+                        metadata={
+                            'name': key,
+                            'url': path+parse.quote(key),
+                            'page': img_meta['page'],
+                            'company': img_meta['company'],
+                            'date': img_meta['date']
+                        }
+                    )
+                )         
+            else:       
+                docs.append(
+                    Document(
+                        page_content=contents,
+                        metadata={
+                            'name': key,
+                            'url': path+parse.quote(key),
+                            'page': img_meta['page']
+                        }
+                    )
+                )                                                                                                 
         print('docs size: ', len(docs))
         
         return add_to_opensearch(docs, key)
@@ -1451,6 +1465,24 @@ def lambda_handler(event, context):
                 print(f"Got object: {s3obj}")
                 size = int(s3obj['ContentLength'])    
                 
+                page = company = data = ""
+                if 'Metadata' in s3obj:
+                    if 'page' in s3obj['Metadata']:
+                        page = s3obj['Metadata']['page']
+                        print('page: ', page)
+                    if 'company' in s3obj['Metadata']:
+                        company = s3obj['Metadata']['company']
+                        print('company: ', company)
+                    if 'date' in s3obj['Metadata']:
+                        date = s3obj['Metadata']['date']
+                        print('dadateta: ', date)
+                img_meta = {
+                    'page': page,
+                    "company":company,
+                    "date": date
+                }
+                print('img_meta: ', img_meta)
+                
                 #attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
                 #result = s3_client.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
                 #print('result: ', result)            
@@ -1479,7 +1511,7 @@ def lambda_handler(event, context):
                     ids = store_code_for_opensearch(file_type, key)  
                                 
                 elif file_type == 'png' or file_type == 'jpg' or file_type == 'jpeg':
-                    ids = store_image_for_opensearch(key)
+                    ids = store_image_for_opensearch(key, img_meta)
                                                                                                          
                 create_metadata(bucket=s3_bucket, key=key, meta_prefix=meta_prefix, s3_prefix=s3_prefix, url=path+parse.quote(key), category=category, documentId=documentId, ids=ids, files=files)
 
