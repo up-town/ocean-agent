@@ -915,7 +915,7 @@ def load_document(file_type, key):
                     
                     from datetime import datetime
                     d = datetime.strptime(rating_date, '%d %B %Y')
-                    timeStr = str(d)[:9]
+                    timeStr = str(d)[:10]
                     print('subject_company: ', subject_company, ', rating_date: ', timeStr)
 
                     global ocean_profile
