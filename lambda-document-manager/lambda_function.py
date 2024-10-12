@@ -245,25 +245,49 @@ def store_document_for_opensearch(file_type, key):
     # contents = str(contents).replace("\n"," ") 
     print('length: ', len(contents))
     
-    # text
     docs = []
-    docs.append(Document(
-        page_content=contents,
-        metadata={
-            'name': key,
-            'url': path+parse.quote(key)
-        }
-    ))
-    
-    # table
-    for table in tables:
+    if pdf_profile == 'ocean' and (ocean_profile['subject_company'] or ocean_profile['rating_date']):
+        # text        
         docs.append(Document(
-            page_content=table['body'],
+            page_content=contents,
             metadata={
-                'name': table['name'],
-                'url': path+parse.quote(table['name']),
+                'name': key,
+                'url': path+parse.quote(key),
+                'subject_company': ocean_profile['subject_company'],
+                'rating_date': ocean_profile['rating_date']
             }
-        ))            
+        ))
+        
+        # table
+        for table in tables:
+            docs.append(Document(
+                page_content=table['body'],
+                metadata={
+                    'name': table['name'],
+                    'url': path+parse.quote(table['name']),
+                    'subject_company': ocean_profile['subject_company'],
+                    'rating_date': ocean_profile['rating_date']
+                }
+            ))  
+    else:
+        # text        
+        docs.append(Document(
+            page_content=contents,
+            metadata={
+                'name': key,
+                'url': path+parse.quote(key)
+            }
+        ))
+        
+        # table
+        for table in tables:
+            docs.append(Document(
+                page_content=table['body'],
+                metadata={
+                    'name': table['name'],
+                    'url': path+parse.quote(table['name']),
+                }
+            ))            
     print('docs: ', docs)
 
     ids = add_to_opensearch(docs, key)
@@ -884,16 +908,17 @@ def load_document(file_type, key):
                 
                 # extract metadata
                 if pdf_profile == 'ocean' and i==1:
-                    print("---> extract metadata from pdf")
+                    print("---> extract metadata from document")
                     print('content: ', texts[i])
-                    
-                    #ocean_profile = {
-                    #    "subject_company": "", # Subject company
-                    #    "rating_date": "" # Rating date
-                    #}
                     
                     subject_company, rating_date = get_profile_of_doc(texts[i])
                     print('subject_company: ', subject_company, ', rating_date: ', rating_date)
+                    
+                    global ocean_profile
+                    ocean_profile = {
+                        "subject_company": subject_company, 
+                        "rating_date": rating_date 
+                    }
                     
             contents = '\n'.join(texts)
                         
