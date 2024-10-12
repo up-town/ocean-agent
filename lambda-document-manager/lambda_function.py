@@ -778,7 +778,7 @@ def extract_images_from_docx(doc_contents, key):
     print('extracted_image_files: ', extracted_image_files)    
     return extracted_image_files
 
-def extract_table_image(page, index, table_count, bbox, key):
+def extract_table_image(page, index, table_count, bbox, key, subject_company, rating_date):
     pixmap_ori = page.get_pixmap()
     # print(f"width: {pixmap_ori.width}, height: {pixmap_ori.height}")
         
@@ -805,16 +805,24 @@ def extract_table_image(page, index, table_count, bbox, key):
                                 
     fname = 'table_'+key.split('/')[-1].split('.')[0]+f"_{table_count}"
     
-    page = company = date = ""
+    if subject_company:
+        table_meta = {
+            "ext": 'png',
+            "page": str(index),
+            "company": subject_company,
+            "date": rating_date
+        }
+    else:
+        table_meta = {
+            "ext": 'png',
+            "page": str(index)
+        }
 
     response = s3_client.put_object(
         Bucket=s3_bucket,
         Key=folder+fname+'.png',
         ContentType='image/png',
-        Metadata = {
-            "ext": 'png',
-            "page": str(index)
-        },
+        Metadata = table_meta,
         Body=pixels
     )
     # print('response: ', response)
@@ -944,7 +952,7 @@ def load_document(file_type, key):
                         print("\n\n")
                         
                         if tab.row_count>=2:
-                            table_image = extract_table_image(page, i, table_count, tab.bbox, key)
+                            table_image = extract_table_image(page, i, table_count, tab.bbox, key, subject_company, rating_date)
                             table_count += 1
                         
                             tables.append({
