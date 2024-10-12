@@ -246,7 +246,7 @@ def store_document_for_opensearch(file_type, key):
     print('length: ', len(contents))
     
     docs = []
-    if pdf_profile == 'ocean' and (ocean_profile['subject_company'] or ocean_profile['rating_date']):
+    if pdf_profile == 'ocean':
         # text        
         docs.append(Document(
             page_content=contents,
@@ -995,7 +995,7 @@ def load_document(file_type, key):
                         fname = 'img_'+key.split('/')[-1].split('.')[0]+f"_{i}"
                         print('fname: ', fname)          
 
-                        if pdf_profile == 'ocean' and (ocean_profile['subject_company'] or ocean_profile['rating_date']):
+                        if pdf_profile == 'ocean':
                             img_meta = {
                                 "ext": 'png',
                                 "page": str(i),
@@ -1007,6 +1007,7 @@ def load_document(file_type, key):
                                 "ext": 'png',
                                 "page": str(i)
                             }
+                        print('img_meta: ', img_meta)
                                
                         response = s3_client.put_object(
                             Bucket=s3_bucket,
