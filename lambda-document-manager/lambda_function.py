@@ -923,6 +923,7 @@ def load_document(file_type, key):
                         "subject_company": subject_company, 
                         "rating_date": timeStr 
                     }
+                    print('ocean_profile: ', ocean_profile)
                     
             contents = '\n'.join(texts)
                         
