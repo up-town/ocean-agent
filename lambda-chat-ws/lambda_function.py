@@ -625,8 +625,6 @@ def grade_documents(question, documents):
             # Document not relevant
             else:
                 print("---GRADE: DOCUMENT NOT RELEVANT---")
-                # We do not include the document in filtered_docs
-                # We set a flag to indicate that we want to run web search
                 continue
     
     # print('len(docments): ', len(filtered_docs))    
@@ -1472,7 +1470,7 @@ def search_by_opensearch(keyword: str) -> str:
     answer = ""
     top_k = 2
     
-    docs = [] 
+    relevant_docs = [] 
     if enalbeParentDocumentRetrival == 'true': # parent/child chunking
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, keyword, top_k)
                         
@@ -1486,7 +1484,7 @@ def search_by_opensearch(keyword: str) -> str:
             excerpt, name, url = get_parent_content(parent_doc_id) # use pareant document
             #print(f"parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, url: {url}, content: {excerpt}")
             
-            docs.append(
+            relevant_docs.append(
                 Document(
                     page_content=excerpt,
                     metadata={
@@ -1514,7 +1512,7 @@ def search_by_opensearch(keyword: str) -> str:
                 
             name = document[0].metadata['name']
             
-            docs.append(
+            relevant_docs.append(
                 Document(
                     page_content=excerpt,
                     metadata={
@@ -1526,12 +1524,14 @@ def search_by_opensearch(keyword: str) -> str:
             )
     
     #if enableHybridSearch == 'true':
-    #    docs = docs + lexical_search_for_tool(keyword, top_k)
+    #    relevant_docs = relevant_docs + lexical_search_for_tool(keyword, top_k)
     
-    print('doc length: ', len(docs))
+    print('doc length: ', len(relevant_docs))
                 
-    filtered_docs = grade_documents(keyword, docs)
-        
+    filtered_docs = grade_documents(keyword, relevant_docs)  # grading
+    
+    filtered_docs = check_duplication(filtered_docs) # check duplication
+    
     for i, doc in enumerate(filtered_docs):
         if len(doc.page_content)>=100:
             text = doc.page_content[:100]
@@ -1540,21 +1540,16 @@ def search_by_opensearch(keyword: str) -> str:
             
         print(f"filtered doc[{i}]: {text}, metadata:{doc.metadata}")
        
-    answer = "" 
+    relevant_context = "" 
     for doc in filtered_docs:
-        excerpt = doc.page_content
+        content = doc.page_content
         
-        url = ""
-        if "url" in doc.metadata:
-            url = doc.metadata['url']
+        relevant_context = relevant_context + f"{content}\n\n"
         
-        answer = answer + f"{excerpt}\n\n"
-        
-    return answer
+    return relevant_context
 
 def run_agent_executor(connectionId, requestId, query):
     chatModel = get_chat() 
-    # tools = [get_current_time, get_book_list, get_weather_info, search_by_tavily, search_by_opensearch]
     tools = [get_current_time, get_book_list, get_weather_info, search_by_tavily, search_by_opensearch]
 
     model = chatModel.bind_tools(tools)
@@ -1647,6 +1642,234 @@ def run_agent_executor(connectionId, requestId, query):
     
     # print('reference_docs: ', reference_docs)
     return msg
+
+####################### LangGraph #######################
+# Ocean Agent
+#########################################################
+
+class State(TypedDict):
+    sub_questions : str
+    subject_company: str
+    rating_date: str
+    relevant_answers : list[str]
+    answer : str
+        
+def retrieve(query: str, subject_company: str):
+    global reference_docs
+    
+    top_k = 4
+    relevant_docs = []
+    
+    bedrock_embedding = get_embedding()
+       
+    vectorstore_opensearch = OpenSearchVectorSearch(
+        index_name = index_name,
+        is_aoss = False,
+        ef_search = 1024, # 512(default)
+        m=48,
+        #engine="faiss",  # default: nmslib
+        embedding_function = bedrock_embedding,
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+    )  
+    
+    if enalbeParentDocumentRetrival == 'true': # parent/child chunking
+        relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, query, top_k)
+                        
+        for i, document in enumerate(relevant_documents):
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            
+            parent_doc_id = document[0].metadata['parent_doc_id']
+            doc_level = document[0].metadata['doc_level']
+            #print(f"child: parent_doc_id: {parent_doc_id}, doc_level: {doc_level}")
+            
+            excerpt, name, url = get_parent_content(parent_doc_id) # use pareant document
+            #print(f"parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, url: {url}, content: {excerpt}")
+            
+            relevant_docs.append(
+                Document(
+                    page_content=excerpt,
+                    metadata={
+                        'name': name,
+                        'url': url,
+                        'doc_level': doc_level,
+                        'from': 'vector'
+                    },
+                )
+            )
+    else: 
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+            query = query,
+            k = top_k,
+        )
+        
+        for i, document in enumerate(relevant_documents):
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            
+            name = document[0].metadata['name']
+            url = document[0].metadata['url']
+            content = document[0].page_content
+                   
+            relevant_docs.append(
+                Document(
+                    page_content=content,
+                    metadata={
+                        'name': name,
+                        'url': url,
+                        'from': 'vector'
+                    },
+                )
+            )
+
+    filtered_docs = grade_documents(query, relevant_docs) # grading
+    
+    filtered_docs = check_duplication(filtered_docs) # check duplication
+            
+    relevant_context = ""
+    for i, document in enumerate(filtered_docs):
+        print(f"{i}: {document}")
+        if document.page_content:
+            content = document.page_content
+            
+        relevant_context = relevant_context + content + "\n\n"
+        
+    print('relevant_context: ', relevant_context)
+
+    if isKorean(query)==True:
+        system = (
+            """다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            
+            <context>
+            {context}
+            </context>"""
+        )
+    else: 
+        system = (
+            """Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+            
+            <context>
+            {context}
+            </context>"""
+        )
+    
+    human = "{input}"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    # print('prompt: ', prompt)
+                   
+    chat = get_chat()
+    
+    chain = prompt | chat
+    try: 
+        result = chain.invoke(
+            {
+                "context": relevant_context,
+                "input": query,
+            }
+        )
+        print('result: ', result)
+        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                    
+        # raise Exception ("Not able to request to LLM")
+
+    reference_docs += filtered_docs
+    return result, reference_docs
+
+def parallel_retriever(state: State):
+    sub_questions = state["sub_questions"]
+    subject_company = state["subject_company"]
+    
+    relevant_answers = []
+    for i, sub_question in enumerate(sub_questions):
+        print(f"sub_question: {sub_question}")
+        
+        answer = retrieve(sub_question, subject_company)
+        print(f"---> {i} sub_question: {sub_question}, answer: {answer}")
+        
+        relevant_answers.append(answer)
+        
+    return {"relevant_answers": relevant_answers}
+
+def generate_node(state: State):    
+    context = state['relevant_answers']
+    question = f"{state['subject_company']}에 대해 소개합니다."
+    
+    system = (
+        "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+            
+        "<context>"
+        "{context}"
+        "</context>"
+    )
+    
+    human = "{input}"
+    
+    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    # print('prompt: ', prompt)
+
+    chat = get_chat()                   
+    
+    chain = prompt | chat
+    
+    try: 
+        answer = chain.invoke(
+            {
+                "context": context,
+                "input": question,
+            }
+        )        
+        print('answer: ', answer)
+        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+            
+        raise Exception ("Not able to request to LLM")
+
+    return {"answer": answer}
+
+def buildWorkflow():
+    workflow = StateGraph(State)
+    workflow.add_node("retrieve", parallel_retriever)
+    workflow.add_node("generate", generate_node)
+    
+    # Set entry point
+    # workflow.set_entry_point("retrieve")    
+    workflow.add_edge(START, "retrieve")
+    
+    workflow.add_edge("retrieve", "generate")
+    workflow.add_edge("generate", END)
+    
+    return workflow.compile()
+            
+def run_agent_ocean(connectionId, requestId, query):
+    app = buildWorkflow()
+    
+    subject_company = query
+    
+    sub_questions = {
+        "establish", 
+        "location", 
+        "management", 
+        "affiliated"
+    }
+    
+    # Run the workflow
+    isTyping(connectionId, requestId)
+    inputs = {
+        "subject_company": subject_company,
+        "sub_questions": sub_questions
+    }    
+    config = {
+        "recursion_limit": 50
+    }
+    
+    output = app.invoke(inputs, config)
+    print('output: ', output)
+    
+    return output['answer']
 
 def getResponse(connectionId, jsonBody):
     print('jsonBody: ', jsonBody)
