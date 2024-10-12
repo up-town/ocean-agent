@@ -912,12 +912,16 @@ def load_document(file_type, key):
                     print('content: ', texts[i])
                     
                     subject_company, rating_date = get_profile_of_doc(texts[i])
-                    print('subject_company: ', subject_company, ', rating_date: ', rating_date)
                     
+                    from datetime import datetime
+                    d = datetime.strptime(rating_date, '%d %B %Y')
+                    timeStr = str(d)[:9]
+                    print('subject_company: ', subject_company, ', rating_date: ', timeStr)
+
                     global ocean_profile
                     ocean_profile = {
                         "subject_company": subject_company, 
-                        "rating_date": rating_date 
+                        "rating_date": timeStr 
                     }
                     
             contents = '\n'.join(texts)
