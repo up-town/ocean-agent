@@ -90,7 +90,7 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
     return msg
 ```
 
-조회한 문서의 관련도는 아래와 같이 LLM을 이용하여 grading을 수행합니다.
+조회한 문서의 관련도는 아래와 같이 LLM을 이용하여 grading을 수행합니다. 문서의 관련도 평가는 [LLM으로 RAG Grading 활용하기](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/RAG-grading.md)를 참조합니다.
 
 ```python
 def grade_documents(question, documents):
