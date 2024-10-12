@@ -1447,6 +1447,7 @@ def search_by_opensearch(keyword: str) -> str:
     keyword: search keyword
     return: the technical information of keyword
     """    
+    global reference_docs
     
     print('keyword: ', keyword)
     keyword = keyword.replace('\'','')
@@ -1543,6 +1544,8 @@ def search_by_opensearch(keyword: str) -> str:
         content = doc.page_content
         
         relevant_context = relevant_context + f"{content}\n\n"
+        
+    reference_docs += filtered_docs
         
     return relevant_context
 
@@ -1891,8 +1894,6 @@ def getResponse(connectionId, jsonBody):
     print('multi_region: ', multi_region)
         
     print('initiate....')
-    global reference_docs
-    reference_docs = []
 
     global map_chain, memory_chain
     
@@ -1905,6 +1906,10 @@ def getResponse(connectionId, jsonBody):
     modelId = profile['model_id']
     # print(f'selected_chat: {selected_chat}, bedrock_region: {bedrock_region}, modelId: {modelId}')
     # print('profile: ', profile)
+    
+    global reference_docs, contentList
+    reference_docs = []
+    contentList = []
     
     chat = get_chat()    
     
@@ -2067,7 +2072,7 @@ def getResponse(connectionId, jsonBody):
                 
                 memory_chain.chat_memory.add_user_message(f"{object}에서 텍스트를 추출하세요.")
                 memory_chain.chat_memory.add_ai_message(extracted_text)
-            
+                
             else:
                 msg = "uploaded file: "+object
         
