@@ -57,9 +57,12 @@ def get_profile_of_doc(content: str):
 
 ## 실행결과
 
-채팅 메뉴에서 "RAG Knowledge Base"를 선택한 후에 "교보 다이렉트 보험에 대해 설명해주세요."라고 입력하면 아래와 같이 RAG를 통해 얻어진 정보와 관련 문서를 확인할 수 있습니다.
+채팅 메뉴에서 "Agentic RAG"를 선택한 후에 "Suzano는 어떤 회사이지?"라고 입력하면 아래와 같이 RAG와 웹검색을 통해 얻어진 정보와 관련 문서를 확인할 수 있습니다.
 
-![image](https://github.com/user-attachments/assets/ff287438-ca1d-4d52-a718-c1c67dac597f)
+
+![noname](https://github.com/user-attachments/assets/26af0bc3-fbee-4f8d-971e-be899cc4124b)
+
+
 
 
 ## 결론
