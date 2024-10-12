@@ -526,8 +526,9 @@ def get_retrieval_grader(chat):
 def grade_document_based_on_relevance(conn, question, doc, models, selected):     
     chat = get_multi_region_chat(models, selected)
     retrieval_grader = get_retrieval_grader(chat)
+    
+    print(f"question: {question}, document:{doc.page_content}")    
     score = retrieval_grader.invoke({"question": question, "document": doc.page_content})
-    print(f"question: {question}, document:{doc.page_content}")
     print(f"score: {score}")
     
     grade = score.binary_score    
