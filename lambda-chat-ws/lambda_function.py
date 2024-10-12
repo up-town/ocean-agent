@@ -1457,7 +1457,7 @@ def search_by_opensearch(keyword: str) -> str:
     bedrock_embedding = get_embedding()
         
     vectorstore_opensearch = OpenSearchVectorSearch(
-        index_name = "idx-*", # all
+        index_name = index_name,
         is_aoss = False,
         ef_search = 1024, # 512(default)
         m=48,
@@ -1467,9 +1467,7 @@ def search_by_opensearch(keyword: str) -> str:
         http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
     ) 
     
-    answer = ""
-    top_k = 2
-    
+    top_k = 2    
     relevant_docs = [] 
     if enalbeParentDocumentRetrival == 'true': # parent/child chunking
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, keyword, top_k)
