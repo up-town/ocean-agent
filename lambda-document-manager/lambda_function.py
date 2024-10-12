@@ -995,14 +995,24 @@ def load_document(file_type, key):
                         fname = 'img_'+key.split('/')[-1].split('.')[0]+f"_{i}"
                         print('fname: ', fname)          
 
+                        if pdf_profile == 'ocean' and (ocean_profile['subject_company'] or ocean_profile['rating_date']):
+                            img_meta = {
+                                "ext": 'png',
+                                "page": str(i),
+                                "subject_company": ocean_profile['subject_company'],
+                                "rating_date": ocean_profile['rating_date']
+                            }
+                        else: 
+                            img_meta = {
+                                "ext": 'png',
+                                "page": str(i)
+                            }
+                               
                         response = s3_client.put_object(
                             Bucket=s3_bucket,
                             Key=folder+fname+'.png',
                             ContentType='image/png',
-                            Metadata = {
-                                "ext": 'png',
-                                "page": str(i)
-                            },
+                            Metadata = img_meta,
                             Body=pixels
                         )
                         print('response: ', response)
