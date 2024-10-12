@@ -1,4 +1,10 @@
-# Agent를 이용한 프로파일 정리
+# Agent를 이용한 정보 조회 서비스
+
+<p align="left">
+    <a href="https://hits.seeyoufarm.com"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fkyopark2014%2Focean-agent&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com"/></a>
+    <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-green">
+</p>
+
 
 ## 문서 전처리
 
@@ -36,3 +42,4 @@ def get_profile_of_doc(content: str):
             break
     return subject_company, rating_date        
 ```
+
