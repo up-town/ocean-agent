@@ -485,28 +485,14 @@ def add_to_opensearch(docs, key):
 
         parent_docs = parent_splitter.split_documents(docs)
         print('len(parent_docs): ', len(parent_docs))
+        
         if len(parent_docs):
             # print('parent_docs[0]: ', parent_docs[0])
             # parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
             # print('parent_doc_ids: ', parent_doc_ids)
-            
-            page = company = date = ""
-            if "page" in docs.metadata:
-                page = docs.metadata["page"]
-            if "company" in docs.metadata:
-                company = docs.metadata["company"]
-            if "date" in docs.metadata:
-                date = docs.metadata["date"]
-                
             for i, doc in enumerate(parent_docs):
                 doc.metadata["doc_level"] = "parent"
-                # print(f"parent_docs[{i}]: {doc}")                
-                if page:
-                    doc.metadata["page"] = page
-                if company:
-                    doc.metadata["company"] = company
-                if date:
-                    doc.metadata["date"] = date
+                print(f"parent_docs[{i}]: {doc}")
                     
             try:        
                 parent_doc_ids = vectorstore.add_documents(parent_docs, bulk_size = 10000)
@@ -520,16 +506,16 @@ def add_to_opensearch(docs, key):
                     sub_docs = child_splitter.split_documents([doc])
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
-                        _doc.metadata["doc_level"] = "child"                        
-                        if page:
-                            _doc.metadata["page"] = page
-                        if company:
-                            _doc.metadata["company"] = company
-                        if date:
-                            _doc.metadata["date"] = date
+                        _doc.metadata["doc_level"] = "child"
+                        if "page" in parent_doc_ids[i].metadata:
+                            _doc.metadata["page"] = parent_doc_ids[i].metadata["page"]
+                        if "company" in parent_doc_ids[i].metadata:
+                            _doc.metadata["company"] = parent_doc_ids[i].metadata["company"]
+                        if "date" in parent_doc_ids[i].metadata:
+                            _doc.metadata["date"] = parent_doc_ids[i].metadata["date"]
                         
                     child_docs.extend(sub_docs)
-                # print('child_docs: ', child_docs)
+                print('child_docs: ', child_docs)
                 
                 child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 10000)
                 print('child_doc_ids: ', child_doc_ids) 
