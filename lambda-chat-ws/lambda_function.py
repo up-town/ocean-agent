@@ -1654,6 +1654,48 @@ class State(TypedDict):
     rating_date: str
     relevant_answers : list[str]
     answer : str
+
+def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
+    result = vectorstore_opensearch.similarity_search_with_score(
+        query = query,
+        k = top_k*2,  
+        pre_filter={
+            "doc_level": {"$eq": "child"},
+            "subject_company": {"$eq": subject_company}
+        }
+    )
+    # print('result: ', result)
+                
+    relevant_documents = []
+    docList = []
+    for re in result:
+        if 'parent_doc_id' in re[0].metadata:
+            parent_doc_id = re[0].metadata['parent_doc_id']
+            doc_level = re[0].metadata['doc_level']
+            print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
+                        
+            if doc_level == 'child':
+                if parent_doc_id in docList:
+                    print('duplicated!')
+                else:
+                    relevant_documents.append(re)
+                    docList.append(parent_doc_id)
+                        
+                    if len(relevant_documents)>=top_k:
+                        break                                
+    # print('lexical query result: ', json.dumps(response))
+    
+    for i, doc in enumerate(relevant_documents):
+        #print('doc: ', doc[0])
+        #print('doc content: ', doc[0].page_content)
+        
+        if len(doc[0].page_content)>=100:
+            text = doc[0].page_content[:100]
+        else:
+            text = doc[0].page_content            
+        print(f"--> vector search doc[{i}]: {text}, metadata:{doc[0].metadata}")        
+
+    return relevant_documents
         
 def retrieve(query: str, subject_company: str):
     global reference_docs
@@ -1675,7 +1717,7 @@ def retrieve(query: str, subject_company: str):
     )  
     
     if enalbeParentDocumentRetrival == 'true': # parent/child chunking
-        relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, query, top_k)
+        relevant_documents = get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company)
                         
         for i, document in enumerate(relevant_documents):
             print(f'## Document(opensearch-vector) {i+1}: {document}')
@@ -1701,9 +1743,14 @@ def retrieve(query: str, subject_company: str):
     else: 
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
-            k = top_k,
+            k = top_k,  
+            pre_filter={
+                "doc_level": {"$eq": "child"},
+                "subject_company": {"$eq": subject_company}
+            }
         )
-        
+        # print('result: ', result)
+    
         for i, document in enumerate(relevant_documents):
             print(f'## Document(opensearch-vector) {i+1}: {document}')
             
