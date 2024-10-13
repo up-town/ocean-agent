@@ -1704,17 +1704,19 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
                 
     relevant_documents = []
     docList = []
-    for re in result:
+    for i, re in enumerate(result):
+        print(f"relevant_document[{i}]: {re}")
+        
         parent_doc_id = doc_level = meta_subject_company = meta_rating_date = ""
-        if "parent_doc_id" in re[0].metadata['parent_doc_id']:
-            parent_doc_id = re[0].metadata['parent_doc_id']
-        if "doc_level" in re[0].metadata['doc_level']:
-            doc_level = re[0].metadata['doc_level']
-        if "subject_company" in re[0].metadata['subject_company']:
-            meta_subject_company = re[0].metadata['subject_company']
-        if "rating_date" in re[0].metadata['rating_date']:
-            meta_rating_date = re[0].metadata['rating_date']
-        print(f"parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, subject_company: {meta_subject_company}, rating_date: {meta_rating_date}")
+        if "parent_doc_id" in re.metadata['parent_doc_id']:
+            parent_doc_id = re.metadata['parent_doc_id']
+        if "doc_level" in re.metadata['doc_level']:
+            doc_level = re.metadata['doc_level']
+        if "subject_company" in re.metadata['subject_company']:
+            meta_subject_company = re.metadata['subject_company']
+        if "rating_date" in re.metadata['rating_date']:
+            meta_rating_date = re.metadata['rating_date']
+        print(f"--> (metadata) parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, subject_company: {meta_subject_company}, rating_date: {meta_rating_date}")
             
         if parent_doc_id and doc_level=='child' and meta_subject_company==subject_company:
             if parent_doc_id in docList:
