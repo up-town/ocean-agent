@@ -1929,7 +1929,7 @@ def generate_node(state: State):
     planning_steps = state["planning_steps"]
     text = ""
     drafts = []
-    for i in range(len(planning_steps)):
+    for i in range(len(planning_steps)+1):
         drafts[i] = ""
     
     for i, step in enumerate(planning_steps):
