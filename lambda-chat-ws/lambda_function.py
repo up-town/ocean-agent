@@ -1826,7 +1826,7 @@ def retrieve(query: str, subject_company: str):
 
 def parallel_retriever(state: State):
     subject_company = state["subject_company"]    
-    relevant_context = state["relevant_context"]
+    relevant_contexts = state["relevant_contexts"]
     planning_steps = state["planning_steps"]
     context = ""
     for i, step in enumerate(planning_steps):
@@ -1840,9 +1840,9 @@ def parallel_retriever(state: State):
         for doc in docs:            
             context += doc.page_content
         
-        relevant_context.append(context)
+        relevant_contexts.append(context)
         
-    return {"relevant_context": relevant_context}
+    return {"relevant_contexts": relevant_contexts}
 
 def generate_node(state: State):    
     context = state['relevant_docs']
