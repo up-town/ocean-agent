@@ -1692,6 +1692,7 @@ def markdown_to_html(body):
     return html
 
 def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
+    print(f"query: {query}, subject_company: {subject_company}")
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,  
