@@ -1705,22 +1705,26 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     relevant_documents = []
     docList = []
     for re in result:
-        parent_doc_id = re[0].metadata['parent_doc_id']
-        doc_level = re[0].metadata['doc_level']
-        subject_company = re[0].metadata['subject_company']
-        rating_date = re[0].metadata['rating_date']
-        print(f"parent_doc_id: {parent_doc_id}, subject_company: {subject_company}, rating_date: {rating_date}")
+        parent_doc_id = doc_level = subject_company = rating_date
+        if "parent_doc_id" in re[0].metadata['parent_doc_id']:
+            parent_doc_id = re[0].metadata['parent_doc_id']
+        if "doc_level" in re[0].metadata['doc_level']:
+            doc_level = re[0].metadata['doc_level']
+        if "subject_company" in re[0].metadata['subject_company']:
+            meta_subject_company = re[0].metadata['subject_company']
+        if "rating_date" in re[0].metadata['rating_date']:
+            meta_rating_date = re[0].metadata['rating_date']
+        print(f"parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, subject_company: {meta_subject_company}, rating_date: {meta_rating_date}")
             
-        if parent_doc_id and subject_company:                        
-            if doc_level == 'child':
-                if parent_doc_id in docList:
-                    print('duplicated!')
-                else:
-                    relevant_documents.append(re)
-                    docList.append(parent_doc_id)
+        if parent_doc_id and doc_level=='child' and meta_subject_company==subject_company:
+            if parent_doc_id in docList:
+                print('duplicated!')
+            else:
+                relevant_documents.append(re)
+                docList.append(parent_doc_id)
                         
-                    if len(relevant_documents)>=top_k:
-                        break                                
+                if len(relevant_documents)>=top_k:
+                    break
     # print('lexical query result: ', json.dumps(response))
     
     #for i, doc in enumerate(relevant_documents):
