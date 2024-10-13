@@ -1716,6 +1716,9 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             ]
         }
     }
+    filter =  {
+        "bool":{
+            "filter": {"term": {"metadata.lesson_id": "TyKfB"}}}}
     print('result: ', result)
                 
     relevant_documents = []
@@ -1940,7 +1943,6 @@ def generate_node(state: State):
     
     for i, step in enumerate(planning_steps):
         context = state["relevant_contexts"][i]
-        drafts[i] = ""
         
         chat = get_chat()                       
         write_chain = write_prompt | chat            
