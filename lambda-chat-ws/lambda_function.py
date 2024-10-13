@@ -905,9 +905,9 @@ def get_references(docs):
                 reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
         else:
             if page:
-                reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}"
+                reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}\n"
             else:
-                reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}"
+                reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}\n"
     return reference
 
 def general_conversation(connectionId, requestId, chat, query):
