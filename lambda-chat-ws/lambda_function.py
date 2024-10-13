@@ -896,11 +896,18 @@ def get_references(docs):
         #excerpt = ''.join(c for c in excerpt if c not in '"')
         excerpt = re.sub('"', '', excerpt)
         print('excerpt(quotation removed): ', excerpt)
+        print('length: ', len(excerpt))
         
-        if page:                
-            reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
+        if len(excerpt)>5000:
+            if page:                
+                reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
+            else:
+                reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
         else:
-            reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
+            if page:
+                reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}"
+            else:
+                reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}"
     return reference
 
 def general_conversation(connectionId, requestId, chat, query):
@@ -1821,7 +1828,7 @@ def retrieve(query: str, subject_company: str):
         )        
         output = result.content
         output = output[output.find('<result>')+8:len(output)-9] # remove <result> tag        
-        print('output: ', output)
+        # print('output: ', output)
         
     except Exception:
         err_msg = traceback.format_exc()
@@ -1837,10 +1844,10 @@ def parallel_retriever(state: State):
     
     relevant_answers = []
     for i, sub_question in enumerate(sub_questions):
-        print(f"sub_question: {sub_question}")
+        # print(f"sub_question: {sub_question}")
         
         answer = retrieve(sub_question, subject_company)
-        print(f"---> {i} sub_question: {sub_question}, answer: {answer}")
+        print(f"---> {i}: sub_question: {sub_question}, answer: {answer}")
         
         relevant_answers.append(answer)
         
@@ -1851,7 +1858,8 @@ def generate_node(state: State):
     question = f"{state['subject_company']}에 대해 소개합니다."
     
     system = (
-        "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+        "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다." 
+        "Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
             
         "<context>"
         "{context}"
@@ -1868,13 +1876,13 @@ def generate_node(state: State):
     chain = prompt | chat
     
     try: 
-        answer = chain.invoke(
+        result = chain.invoke(
             {
                 "context": context,
                 "input": question,
             }
         )        
-        print('answer: ', answer)
+        print('result: ', result.content)
         
     except Exception:
         err_msg = traceback.format_exc()
@@ -1882,7 +1890,7 @@ def generate_node(state: State):
             
         raise Exception ("Not able to request to LLM")
 
-    return {"answer": answer}
+    return {"answer": result.content}
 
 def buildWorkflow():
     workflow = StateGraph(State)
