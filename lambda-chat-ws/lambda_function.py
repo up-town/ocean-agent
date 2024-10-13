@@ -1666,7 +1666,7 @@ class State(TypedDict):
     sub_questions : str
     subject_company: str
     rating_date: str
-    relevant_answers : list[str]
+    relevant_docs : list[str]
     answer : str
 
 def markdown_to_html(body):
@@ -1748,7 +1748,7 @@ def retrieve(query: str, subject_company: str):
     global reference_docs
     
     top_k = 4
-    relevant_docs = []
+    docs = []
     
     bedrock_embedding = get_embedding()
        
@@ -1776,7 +1776,7 @@ def retrieve(query: str, subject_company: str):
             excerpt, name, url = get_parent_content(parent_doc_id) # use pareant document
             #print(f"parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, url: {url}, content: {excerpt}")
             
-            relevant_docs.append(
+            docs.append(
                 Document(
                     page_content=excerpt,
                     metadata={
@@ -1805,7 +1805,7 @@ def retrieve(query: str, subject_company: str):
             url = document[0].metadata['url']
             content = document[0].page_content
                    
-            relevant_docs.append(
+            docs.append(
                 Document(
                     page_content=content,
                     metadata={
@@ -1816,86 +1816,33 @@ def retrieve(query: str, subject_company: str):
                 )
             )
     
-    filtered_docs = grade_documents(query, relevant_docs) # grading
+    filtered_docs = grade_documents(query, docs) # grading
     
     filtered_docs = check_duplication(filtered_docs) # check duplication
             
-    relevant_context = ""
-    for i, document in enumerate(filtered_docs):
-        # print(f"{i}: {document}")
-        if document.page_content:
-            content = document.page_content
-            
-        relevant_context = relevant_context + content + "\n\n"
-        
-    # print('relevant_context: ', relevant_context)
-
-    if isKorean(query)==True:
-        system = (
-            "Assistant는 기업 보고서를 분석하여 정확한 정보르 전달하는 인공지는 비서입니다."
-            "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다."
-            "결과는 <result> tag를 붙여주세요."
-            
-            "<context>"
-            "{context}"
-            "</context>"
-        )
-    else: 
-        system = (
-            "The assistant is an artificial intelligence secretary that analyzes corporate reports and conveys accurate information."
-            "Here is pieces of context, contained in <context> tags."
-            "Provide a concise answer to the question at the end."
-            "Put it in <result> tags."
-            
-            "<context>"
-            "{context}"
-            "</context>"
-        )
+    reference_docs += filtered_docs # add to reference
     
-    human = "{input}"
-    
-    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
-    # print('prompt: ', prompt)
-                   
-    chat = get_chat()
-    
-    chain = prompt | chat
-    try: 
-        result = chain.invoke(
-            {
-                "context": relevant_context,
-                "input": query,
-            }
-        )        
-        output = result.content
-        output = output[output.find('<result>')+8:len(output)-9] # remove <result> tag        
-        # print('output: ', output)
-        
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)                    
-        # raise Exception ("Not able to request to LLM")
-
-    reference_docs += filtered_docs
-    return output
+    return filtered_docs
 
 def parallel_retriever(state: State):
     sub_questions = state["sub_questions"]
     subject_company = state["subject_company"]
     
-    relevant_answers = []
+    relevant_docs = []
     for i, sub_question in enumerate(sub_questions):
         # print(f"sub_question: {sub_question}")
         
-        answer = retrieve(sub_question, subject_company)
-        print(f"---> {i}: sub_question: {sub_question}, answer: {answer}")
+        docs = retrieve(sub_question, subject_company)
         
-        relevant_answers.append(answer)
+        print(f"---> {i}: sub_question: {sub_question}, docs: {docs}")
         
-    return {"relevant_answers": relevant_answers}
+        for doc in docs:
+            relevant_docs.append(doc)
+        
+    return {"relevant_docs": relevant_docs}
 
 def generate_node(state: State):    
-    context = state['relevant_answers']
+    context = state['relevant_docs']
     question = f"{state['subject_company']}에 대해 소개합니다."
     
     system = (
@@ -1989,7 +1936,7 @@ def run_agent_ocean(connectionId, requestId, query):
         "location", 
         "management", 
         "affiliated"
-    }        
+    }
     doc = reporter_agent(subtitle, subject_company, sub_questions)        
     final_doc += doc
     
