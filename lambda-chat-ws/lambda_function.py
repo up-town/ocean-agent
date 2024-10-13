@@ -1700,32 +1700,31 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             ]
         }
     }
-    pre_filter={
-        'bool': {
-            'must': [
-                {
-                    'doc_level': {
-                        'query': 'parent',
-                        'fields': ['metadata.doc_level']
-                    }
-                },
-                {
-                    'simple_query_string': {
-                        'query': subject_company,
-                        'fields': ['metadata.subject_company']
-                    }
-                },
-            ],
-        }
-    }
+    #pre_filter={
+    #    'bool': {
+    #        'must': [
+    #            {
+    #                'doc_level': {
+    #                    'query': 'parent',
+    #                    'fields': ['metadata.doc_level']
+    #                }
+    #            },
+    #            {
+    #                'simple_query_string': {
+    #                    'query': subject_company,
+    #                    'fields': ['metadata.subject_company']
+    #                }
+    #            },
+    #        ],
+    #    }
+    #}
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,  
-        pre_filter=pre_filter
-       # {
-        #    "doc_level": {"$eq": "parent"},
-            #"subject_company": {"$eq": subject_company}
-        #}
+        pre_filter={
+            "metadata.doc_level": {"$eq": "parent"},
+            "metadata.subject_company": {"$eq": subject_company}
+        }
         #pre_filter={
             # "doc_level": {"$eq": "child"},
         #    "subject_company": {"$eq": subject_company}
