@@ -1693,6 +1693,13 @@ def markdown_to_html(body):
 
 def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
     print(f"query: {query}, subject_company: {subject_company}")
+    boolean_filter = {
+        "bool": {
+            "should":[
+                {"match" : {"metadata.subject_company":subject_company}},
+            ]
+        }
+    }
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,  
@@ -1701,7 +1708,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         #    "subject_company": {"$eq": subject_company}
         #}
         #pre_filter={"match": {"subject_company": {"$eq": subject_company}}}
-        pre_filter={"match": {"metadata.subject_company": subject_company}}
+        pre_filter=boolean_filter
     )
     # pre_filter={"term": {"metadata.id": 3}})
     # "subject_company": {"$eq": subject_company}
@@ -1709,13 +1716,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         # "query": {
             # "match": {
                 # "director": "miller"}}})
-    boolean_filter = {
-        "bool": {
-            "should":[
-                {"match" : {"metadata.lesson_id":"TyKfB"}},
-            ]
-        }
-    }
+    
     filter =  {
         "bool":{
             "filter": {"term": {"metadata.lesson_id": "TyKfB"}}}}
