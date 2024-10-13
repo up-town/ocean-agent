@@ -1662,6 +1662,7 @@ def run_agent_executor(connectionId, requestId, query):
 #########################################################
 
 class State(TypedDict):
+    subtitle: str
     sub_questions : str
     subject_company: str
     rating_date: str
@@ -1831,8 +1832,8 @@ def retrieve(query: str, subject_company: str):
 
     if isKorean(query)==True:
         system = (
+            "Assistant는 기업 보고서를 분석하여 정확한 정보르 전달하는 인공지는 비서입니다."
             "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다."
-            "Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
             "결과는 <result> tag를 붙여주세요."
             
             "<context>"
@@ -1841,9 +1842,9 @@ def retrieve(query: str, subject_company: str):
         )
     else: 
         system = (
+            "The assistant is an artificial intelligence secretary that analyzes corporate reports and conveys accurate information."
             "Here is pieces of context, contained in <context> tags."
             "Provide a concise answer to the question at the end."
-            "If you don't know the answer, just say that you don't know, don't try to make up an answer."
             "Put it in <result> tags."
             
             "<context>"
@@ -1898,10 +1899,15 @@ def generate_node(state: State):
     question = f"{state['subject_company']}에 대해 소개합니다."
     
     system = (
-        "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다." 
-        "Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+        "Assistant는 기업 보고서를 분석하여 정확한 정보르 전달하는 인공지는 비서입니다."
+        "다음의 <title> tag은 보고서의 제목이고, <context> tag는 해당 기업과 관련된 자료입니다."
+        "이 보고서를 읽는 사람이 해당 기업의 상황을 쉽고 정확하게 이해하도록 세부 정보를 충분히 제공합니다." 
         "Markdown 서식으로 작성하세요."
-         "결과는 <result> tag를 붙여주세요."   
+        "결과는 <result> tag를 붙여주세요."
+        
+        "<title>"
+        "{subtitle}"
+        "</title>"
             
         "<context>"
         "{context}"
@@ -1919,6 +1925,7 @@ def generate_node(state: State):
     try: 
         result = chain.invoke(
             {
+                "subtitle": state['subtitle'],
                 "context": context,
                 "input": question,
             }
@@ -1964,6 +1971,7 @@ def run_agent_ocean(connectionId, requestId, query):
     # Run the workflow
     isTyping(connectionId, requestId, "")
     inputs = {
+        "subtitle": "회사 소개",
         "subject_company": subject_company,
         "sub_questions": sub_questions
     }    
@@ -1972,7 +1980,6 @@ def run_agent_ocean(connectionId, requestId, query):
     }
     
     # sub title: Company Introduction
-    subtitle = "회사 소개 (Company Introduction)"
     output = app.invoke(inputs, config)
     print('output: ', output['answer'])
     final_doc = output['answer']
@@ -1981,7 +1988,7 @@ def run_agent_ocean(connectionId, requestId, query):
     markdown_key = 'markdown/'+f"{subject_company}.md"
     # print('markdown_key: ', markdown_key)
         
-    markdown_body = f"# {subject_company}\n\n## {subtitle}\n\n"+final_doc
+    markdown_body = f"# {subject_company}\n\n"+final_doc
                 
     s3_client = boto3.client('s3')  
     response = s3_client.put_object(
