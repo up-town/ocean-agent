@@ -1934,7 +1934,7 @@ def generate_node(state: State):
                 "plan": planning_steps,
                 "text": text,
                 "context": context,
-                "STEP": planning_steps[i]
+                "STEP": step
             })
 
             output = result.content
