@@ -1955,34 +1955,53 @@ def buildWorkflow():
     workflow.add_edge("generate", END)
     
     return workflow.compile()
+
+def reporter_agent(subtitle, subject_company, sub_questions):
+    app = buildWorkflow()
+
+    # Run the workflow
+    inputs = {
+        "subtitle": subtitle,
+        "subject_company": subject_company,
+        "sub_questions": sub_questions
+    }
+    config = {
+        "recursion_limit": 50
+    }
+
+    # sub title: Company Introduction
+    output = app.invoke(inputs, config)
+    print('output: ', output['answer'])
+    
+    return output['answer']
             
 def run_agent_ocean(connectionId, requestId, query):
     app = buildWorkflow()
     
-    subject_company = query
+    isTyping(connectionId, requestId, "")
     
+    subject_company = query
+    final_doc = ""
+
+    subtitle = "회사소개"    
     sub_questions = {
         "establish", 
         "location", 
         "management", 
         "affiliated"
-    }
+    }        
+    doc = reporter_agent(subtitle, subject_company, sub_questions)        
+    final_doc += doc
     
-    # Run the workflow
-    isTyping(connectionId, requestId, "")
-    inputs = {
-        "subtitle": "회사 소개",
-        "subject_company": subject_company,
-        "sub_questions": sub_questions
-    }    
-    config = {
-        "recursion_limit": 50
-    }
-    
-    # sub title: Company Introduction
-    output = app.invoke(inputs, config)
-    print('output: ', output['answer'])
-    final_doc = output['answer']
+    subtitle = "주요 영업 활동"    
+    sub_questions = {
+        "cargo", 
+        "route", 
+        "owned/chartered", 
+        "strategy"
+    }        
+    doc = reporter_agent(subtitle, subject_company, sub_questions)        
+    final_doc += doc
     
     # markdown file
     markdown_key = 'markdown/'+f"{subject_company}.md"
