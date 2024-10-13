@@ -1826,9 +1826,10 @@ def retrieve(query: str, subject_company: str):
 
 def parallel_retriever(state: State):
     subject_company = state["subject_company"]    
-    relevant_contexts = state["relevant_contexts"]
     planning_steps = state["planning_steps"]
+    
     context = ""
+    relevant_contexts = []    
     for i, step in enumerate(planning_steps):
         print(f"{i}: {step}")
         
