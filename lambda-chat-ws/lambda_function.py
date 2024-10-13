@@ -1699,7 +1699,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         k = top_k*5,  
         pre_filter = filter
     )    
-    print('result: ', result)
+    # print('result: ', result)
                 
     relevant_documents = []
     docList = []
