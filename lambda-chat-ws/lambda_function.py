@@ -664,7 +664,7 @@ def query_using_RAG_context(connectionId, requestId, chat, context, revised_ques
     chain = prompt | chat
     
     try: 
-        isTyping(connectionId, requestId)  
+        isTyping(connectionId, requestId, "")  
         stream = chain.invoke(
             {
                 "context": context,
@@ -923,7 +923,7 @@ def general_conversation(connectionId, requestId, chat, query):
                 
     chain = prompt | chat    
     try: 
-        isTyping(connectionId, requestId)  
+        isTyping(connectionId, requestId, "")  
         stream = chain.invoke(
             {
                 "history": history,
@@ -1046,10 +1046,12 @@ def revise_question(connectionId, requestId, chat, query):
     return revised_question    
     # return revised_question.replace("\n"," ")
 
-def isTyping(connectionId, requestId):    
+def isTyping(connectionId, requestId, msg):    
+    if not msg:
+        msg = "typing a message..."
     msg_proceeding = {
         'request_id': requestId,
-        'msg': 'Proceeding...',
+        'msg': msg,
         'status': 'istyping'
     }
     #print('result: ', json.dumps(result))
@@ -1624,7 +1626,7 @@ def run_agent_executor(connectionId, requestId, query):
 
     app = buildChatAgent()
         
-    isTyping(connectionId, requestId)
+    isTyping(connectionId, requestId, "")
     
     inputs = [HumanMessage(content=query)]
     config = {"recursion_limit": 50}
@@ -1765,7 +1767,7 @@ def retrieve(query: str, subject_company: str):
                     },
                 )
             )
-
+    
     filtered_docs = grade_documents(query, relevant_docs) # grading
     
     filtered_docs = check_duplication(filtered_docs) # check duplication
@@ -1908,7 +1910,7 @@ def run_agent_ocean(connectionId, requestId, query):
     }
     
     # Run the workflow
-    isTyping(connectionId, requestId)
+    isTyping(connectionId, requestId, "")
     inputs = {
         "subject_company": subject_company,
         "sub_questions": sub_questions
@@ -2036,7 +2038,7 @@ def getResponse(connectionId, jsonBody):
                     reference = get_references(reference_docs)
                 
         elif type == 'document':
-            isTyping(connectionId, requestId)
+            isTyping(connectionId, requestId, "")
             
             object = body
             file_type = object[object.rfind('.')+1:len(object)]            
