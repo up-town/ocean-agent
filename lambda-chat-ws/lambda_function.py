@@ -692,7 +692,7 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     # print('result: ', result)
                 
     relevant_documents = []
-    docList = []
+    docList = []  # for duplication check
     for re in result:
         if 'parent_doc_id' in re[0].metadata:
             parent_doc_id = re[0].metadata['parent_doc_id']
@@ -710,15 +710,12 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
                         break                                
     # print('lexical query result: ', json.dumps(response))
     
-    for i, doc in enumerate(relevant_documents):
-        #print('doc: ', doc[0])
-        #print('doc content: ', doc[0].page_content)
-        
-        if len(doc[0].page_content)>=100:
-            text = doc[0].page_content[:100]
-        else:
-            text = doc[0].page_content            
-        print(f"--> vector search doc[{i}]: {text}, metadata:{doc[0].metadata}")        
+    #for i, doc in enumerate(relevant_documents):
+    #    if len(doc[0].page_content)>=100:
+    #        text = doc[0].page_content[:100]
+    #    else:
+    #        text = doc[0].page_content            
+    #    print(f"--> vector search doc[{i}]: {text}, metadata:{doc[0].metadata}")
 
     return relevant_documents
 
@@ -779,7 +776,7 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, text, top_k)
                         
         for i, document in enumerate(relevant_documents):
-            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            # print(f'## Document(opensearch-vector) {i+1}: {document}')
             
             parent_doc_id = document[0].metadata['parent_doc_id']
             doc_level = document[0].metadata['doc_level']
@@ -806,7 +803,7 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         )
         
         for i, document in enumerate(relevant_documents):
-            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            # print(f'## Document(opensearch-vector) {i+1}: {document}')
             
             name = document[0].metadata['name']
             url = document[0].metadata['url']
@@ -829,13 +826,13 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
             
     relevant_context = ""
     for i, document in enumerate(filtered_docs):
-        print(f"{i}: {document}")
+        # print(f"{i}: {document}")
         if document.page_content:
             content = document.page_content
             
         relevant_context = relevant_context + content + "\n\n"
         
-    print('relevant_context: ', relevant_context)
+    # print('relevant_context: ', relevant_context)
 
     msg = query_using_RAG_context(connectionId, requestId, chat, relevant_context, text)
     
@@ -1685,15 +1682,15 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
                         break                                
     # print('lexical query result: ', json.dumps(response))
     
-    for i, doc in enumerate(relevant_documents):
+    #for i, doc in enumerate(relevant_documents):
         #print('doc: ', doc[0])
         #print('doc content: ', doc[0].page_content)
         
-        if len(doc[0].page_content)>=100:
-            text = doc[0].page_content[:100]
-        else:
-            text = doc[0].page_content            
-        print(f"--> vector search doc[{i}]: {text}, metadata:{doc[0].metadata}")        
+    #    if len(doc[0].page_content)>=100:
+    #        text = doc[0].page_content[:100]
+    #    else:
+    #        text = doc[0].page_content            
+    #    print(f"--> vector search doc[{i}]: {text}, metadata:{doc[0].metadata}")        
 
     return relevant_documents
         
@@ -1720,7 +1717,7 @@ def retrieve(query: str, subject_company: str):
         relevant_documents = get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company)
                         
         for i, document in enumerate(relevant_documents):
-            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            # print(f'## Document(opensearch-vector) {i+1}: {document}')
             
             parent_doc_id = document[0].metadata['parent_doc_id']
             doc_level = document[0].metadata['doc_level']
@@ -1752,7 +1749,7 @@ def retrieve(query: str, subject_company: str):
         # print('result: ', result)
     
         for i, document in enumerate(relevant_documents):
-            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            # print(f'## Document(opensearch-vector) {i+1}: {document}')
             
             name = document[0].metadata['name']
             url = document[0].metadata['url']
@@ -1781,23 +1778,28 @@ def retrieve(query: str, subject_company: str):
             
         relevant_context = relevant_context + content + "\n\n"
         
-    print('relevant_context: ', relevant_context)
+    # print('relevant_context: ', relevant_context)
 
     if isKorean(query)==True:
         system = (
-            """다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
+            "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다."
+            "Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+            "결과는 <result> tag를 붙여주세요."
             
-            <context>
-            {context}
-            </context>"""
+            "<context>"
+            "{context}"
+            "</context>"
         )
     else: 
         system = (
-            """Here is pieces of context, contained in <context> tags. Provide a concise answer to the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+            "Here is pieces of context, contained in <context> tags."
+            "Provide a concise answer to the question at the end."
+            "If you don't know the answer, just say that you don't know, don't try to make up an answer."
+            "Put it in <result> tags."
             
-            <context>
-            {context}
-            </context>"""
+            "<context>"
+            "{context}"
+            "</context>"
         )
     
     human = "{input}"
@@ -1814,7 +1816,8 @@ def retrieve(query: str, subject_company: str):
                 "context": relevant_context,
                 "input": query,
             }
-        )
+        )        
+        result = result[result.find('<result>')+8:len(result)-9] # remove <result> tag        
         print('result: ', result)
         
     except Exception:
@@ -1823,7 +1826,7 @@ def retrieve(query: str, subject_company: str):
         # raise Exception ("Not able to request to LLM")
 
     reference_docs += filtered_docs
-    return result, reference_docs
+    return result
 
 def parallel_retriever(state: State):
     sub_questions = state["sub_questions"]
