@@ -1718,12 +1718,11 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     #        ],
     #    }
     #}
+    filter = {"bool": {"filter": {"term": {"metadata.doc_level": "parent"}}}}
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,  
-        re_filter={
-            "match": {"doc_level": "parent"}
-        }
+        re_filter=filter
         #pre_filter={
         #    "metadata.doc_level": {"$eq": "parent"},
         #    "metadata.subject_company": {"$eq": subject_company}
