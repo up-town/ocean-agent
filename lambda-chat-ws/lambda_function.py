@@ -1774,7 +1774,7 @@ def retrieve(query: str, subject_company: str):
             
     relevant_context = ""
     for i, document in enumerate(filtered_docs):
-        print(f"{i}: {document}")
+        # print(f"{i}: {document}")
         if document.page_content:
             content = document.page_content
             
@@ -1819,8 +1819,9 @@ def retrieve(query: str, subject_company: str):
                 "input": query,
             }
         )        
-        result = result[result.find('<result>')+8:len(result)-9] # remove <result> tag        
-        print('result: ', result)
+        output = result.content
+        output = output[output.find('<result>')+8:len(output)-9] # remove <result> tag        
+        print('output: ', output)
         
     except Exception:
         err_msg = traceback.format_exc()
@@ -1828,7 +1829,7 @@ def retrieve(query: str, subject_company: str):
         # raise Exception ("Not able to request to LLM")
 
     reference_docs += filtered_docs
-    return result
+    return output
 
 def parallel_retriever(state: State):
     sub_questions = state["sub_questions"]
