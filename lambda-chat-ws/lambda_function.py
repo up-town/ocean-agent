@@ -956,7 +956,8 @@ def general_conversation(connectionId, requestId, chat, query):
   
 def traslation(chat, text, input_language, output_language):
     system = (
-        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
+        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags." 
+        "Put it in <result> tags."
     )
     human = "<article>{text}</article>"
     
@@ -990,20 +991,24 @@ def revise_question(connectionId, requestId, chat, query):
         system = (
             ""
         )  
-        human = """이전 대화를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요. 새로운 질문은 원래 질문의 중요한 단어를 반드시 포함합니다. 결과는 <result> tag를 붙여주세요.
+        human = (
+            "이전 대화를 참조하여, 다음의 <question>의 뜻을 명확히 하는 새로운 질문을 한국어로 생성하세요." 
+            "새로운 질문은 원래 질문의 중요한 단어를 반드시 포함합니다. 결과는 <result> tag를 붙여주세요."
         
-        <question>            
-        {question}
-        </question>"""
-        
+            "<question>"
+            "{question}"
+            "</question>"
+        )    
     else: 
         system = (
             ""
         )
-        human = """Rephrase the follow up <question> to be a standalone question. Put it in <result> tags.
-        <question>            
-        {question}
-        </question>"""
+        human = (
+            "Rephrase the follow up <question> to be a standalone question. Put it in <result> tags."
+            "<question>"
+            "{question}"
+            "</question>"
+        )
             
     prompt = ChatPromptTemplate.from_messages([("system", system), MessagesPlaceholder(variable_name="history"), ("human", human)])
     print('prompt: ', prompt)
@@ -1113,8 +1118,8 @@ def sendDebugMessage(connectionId, requestId, msg):
         
 def sendErrorMessage(connectionId, requestId, msg):
     errorMsg = {
-        'request_id': requestId,
         'msg': msg,
+        'request_id': requestId,
         'status': 'error'
     }
     print('error: ', json.dumps(errorMsg))
@@ -1144,7 +1149,8 @@ def load_chat_history(userId, allowTime):
 
 def translate_text(chat, text):
     system = (
-        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags. Put it in <result> tags."
+        "You are a helpful assistant that translates {input_language} to {output_language} in <article> tags." 
+        "Put it in <result> tags."
     )
     human = "<article>{text}</article>"
     
@@ -1183,7 +1189,8 @@ def check_grammer(chat, text):
         )
     else: 
         system = (
-            "Here is pieces of article, contained in <article> tags. Find the error in the sentence and explain it, and add the corrected sentence at the end of your answer."
+            "Here is pieces of article, contained in <article> tags." 
+            "Find the error in the sentence and explain it, and add the corrected sentence at the end of your answer."
         )
         
     human = "<article>{text}</article>"
@@ -1860,6 +1867,7 @@ def generate_node(state: State):
     system = (
         "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다." 
         "Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+         "결과는 <result> tag를 붙여주세요."   
             
         "<context>"
         "{context}"
@@ -1873,8 +1881,7 @@ def generate_node(state: State):
 
     chat = get_chat()                   
     
-    chain = prompt | chat
-    
+    chain = prompt | chat    
     try: 
         result = chain.invoke(
             {
@@ -1882,7 +1889,9 @@ def generate_node(state: State):
                 "input": question,
             }
         )        
-        print('result: ', result.content)
+        output = result.content        
+        output = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
+        print('output: ', output)        
         
     except Exception:
         err_msg = traceback.format_exc()
@@ -1890,7 +1899,7 @@ def generate_node(state: State):
             
         raise Exception ("Not able to request to LLM")
 
-    return {"answer": result.content}
+    return {"answer": output}
 
 def buildWorkflow():
     workflow = StateGraph(State)
@@ -1928,8 +1937,12 @@ def run_agent_ocean(connectionId, requestId, query):
         "recursion_limit": 50
     }
     
+    # sub title: Company Introduction
+    subtitle = "Company Introduction"
     output = app.invoke(inputs, config)
-    print('output: ', output)
+    print('output: ', output['answer'])
+    
+    
     
     return output['answer']
 
