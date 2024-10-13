@@ -1664,7 +1664,6 @@ def run_agent_executor(connectionId, requestId, query):
 class State(TypedDict):
     subject_company: str
     rating_date: str    
-    sub_quries: List[List[str]]    
     planning_steps: List[str]
     relevant_contexts : list[str]
     drafts : List[str]
@@ -1828,19 +1827,45 @@ def parallel_retriever(state: State):
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
     
-    context = ""
     relevant_contexts = []    
+    
+    sub_quries = [
+        {
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        },
+        {
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        },
+        {
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        },
+        {
+            "Infospectrum level",
+            "Overall assessment"
+        }        
+    ]
+    
     for i, step in enumerate(planning_steps):
         print(f"{i}: {step}")
-        
-        sub_quries = state["sub_quries"]
-        docs = retrieve(sub_quries[i], subject_company)
-        
-        print(f"---> {i}: sub_quries: {sub_quries[i]}, docs: {docs}")
-        
-        for doc in docs:            
-            context += doc.page_content
-        
+
+        context = ""        
+        for q in sub_quries[i]:
+            docs = retrieve(q, subject_company)
+            
+            print(f"---> q: {sub_quries[i]}, docs: {docs}")
+            
+            for doc in docs:            
+                context += doc.page_content
+            
         relevant_contexts.append(context)
         
     return {"relevant_contexts": relevant_contexts}
@@ -1969,31 +1994,6 @@ def run_agent_ocean(connectionId, requestId, query):
         "5. 종합 평가"
     }
     
-    sub_quries = [
-        {
-            "establish", 
-            "location", 
-            "management", 
-            "affiliated"
-        },
-        {
-            "cargo", 
-            "route", 
-            "owned/chartered", 
-            "strategy"
-        },
-        {
-            "financial performance", 
-            "route", 
-            "financial risk",
-            "payment"
-        },
-        {
-            "Infospectrum level",
-            "Overall assessment"
-        }        
-    ]
-    
     subject_company = query
     
     isTyping(connectionId, requestId, "")
@@ -2002,8 +2002,7 @@ def run_agent_ocean(connectionId, requestId, query):
     # Run the workflow
     inputs = {
         "subject_company": subject_company,
-        "planning_steps": planning_steps,
-        "sub_queries": sub_quries
+        "planning_steps": planning_steps
     }
     config = {
         "recursion_limit": 50
