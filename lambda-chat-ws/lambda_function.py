@@ -1693,17 +1693,14 @@ def markdown_to_html(body):
 
 def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
     print(f"query: {query}, subject_company: {subject_company}")
-    
-        
-    filter = {"bool": {"filter": {"term": {"metadata.subject_company": subject_company}}}}
+            
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,  
-        pre_filter=filter
-        #pre_filter={
-        #    "metadata.doc_level": {"$eq": "parent"},
-        #    "metadata.subject_company": {"$eq": subject_company}
-        #}
+        pre_filter={
+            "metadata.doc_level": {"$eq": "parent"},
+            "metadata.subject_company": {"$eq": subject_company}
+        }
         #pre_filter={
             # "doc_level": {"$eq": "child"},
         #    "subject_company": {"$eq": subject_company}
