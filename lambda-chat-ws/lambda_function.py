@@ -1700,19 +1700,18 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             "subject_company": {"$eq": subject_company}
         }
     )
-    # print('result: ', result)
+    print('result: ', result)
                 
     relevant_documents = []
     docList = []
     for re in result:
-        if 'parent_doc_id' and 'subject_company' in re[0].metadata:
-            parent_doc_id = re[0].metadata['parent_doc_id']
-            doc_level = re[0].metadata['doc_level']
-            subject_company = re[0].metadata['subject_company']
-            rating_date = re[0].metadata['rating_date']
+        parent_doc_id = re[0].metadata['parent_doc_id']
+        doc_level = re[0].metadata['doc_level']
+        subject_company = re[0].metadata['subject_company']
+        rating_date = re[0].metadata['rating_date']
+        print(f"parent_doc_id: {parent_doc_id}, subject_company: {subject_company}, rating_date: {rating_date}")
             
-            print(f"parent_doc_id: {parent_doc_id}, subject_company: {subject_company}, rating_date: {rating_date}")
-                        
+        if parent_doc_id and subject_company:                        
             if doc_level == 'child':
                 if parent_doc_id in docList:
                     print('duplicated!')
