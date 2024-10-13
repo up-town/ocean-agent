@@ -895,11 +895,11 @@ def get_references(docs):
         #excerpt = excerpt.replace('"', '')        
         #excerpt = ''.join(c for c in excerpt if c not in '"')
         excerpt = re.sub('"', '', excerpt)
-        print('excerpt(quotation removed): ', excerpt)
+        # print('excerpt(quotation removed): ', excerpt)
         print('length: ', len(excerpt))
         
         if len(excerpt)>5000:
-            if page:                
+            if page:
                 reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
             else:
                 reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
@@ -2012,7 +2012,12 @@ def run_agent_ocean(connectionId, requestId, query):
     html_url = f"{path}{html_key}"
     print('html_url: ', html_url)
     
-    final_answer = final_doc+f"\n<a href={html_url} target=_blank>[미리보기 링크]</a>\n<a href={markdown_url} download=\"{subject_company}.md\">[다운로드 링크]</a>"    
+    encoded_html_url = parse.quote(html_url)
+    print('encoded html_url: ', encoded_html_url)
+    encoded_markdown_url = parse.quote(markdown_url)
+    print('encoded markdown_url: ', encoded_markdown_url)
+    
+    final_answer = final_doc+f"\n<a href={encoded_html_url} target=_blank>[미리보기 링크]</a>\n<a href={encoded_markdown_url} download=\"{subject_company}.md\">[다운로드 링크]</a>"    
 
     return final_answer
 
