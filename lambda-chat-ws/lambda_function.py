@@ -1721,10 +1721,13 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,  
-        pre_filter={
-            "metadata.doc_level": {"$eq": "parent"},
-            "metadata.subject_company": {"$eq": subject_company}
+        re_filter={
+            "match": {"doc_level": "parent"}
         }
+        #pre_filter={
+        #    "metadata.doc_level": {"$eq": "parent"},
+        #    "metadata.subject_company": {"$eq": subject_company}
+        #}
         #pre_filter={
             # "doc_level": {"$eq": "child"},
         #    "subject_company": {"$eq": subject_company}
@@ -1739,7 +1742,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             # "match": {
                 # "director": "miller"}}})
     
-    
+    #"match": {"id": parent_doc_id}
     filter =  {
         "bool":{
             "filter": {"term": {"metadata.lesson_id": "TyKfB"}}}}
