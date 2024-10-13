@@ -1921,7 +1921,7 @@ def generate_node(state: State):
     instruction = f"{state['subject_company']} 회사에 대해 소개해 주세요."
     planning_steps = state["planning_steps"]
     text = ""
-    drafts = state["drafts"]
+    drafts = []
     
     for i, step in enumerate(planning_steps):
         context = state["relevant_contexts"][i]
