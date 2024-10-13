@@ -1696,8 +1696,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
               
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
-        k = top_k*5,  
-        pre_filter = filter
+        k = top_k*5
     )    
     # print('result: ', result)
                 
