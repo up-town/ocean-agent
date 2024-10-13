@@ -1943,6 +1943,7 @@ def generate_node(state: State):
     drafts = []
     
     for i, step in enumerate(planning_steps):
+        print(f"{i}: {step}")
         context = state["relevant_contexts"][i]
         
         chat = get_chat()                       
@@ -1967,7 +1968,7 @@ def generate_node(state: State):
             print(f"--> {draft}")
 
             text += draft + '\n\n'
-            drafts[i] = draft
+            drafts.append(draft)
                 
         except Exception:
             err_msg = traceback.format_exc()
