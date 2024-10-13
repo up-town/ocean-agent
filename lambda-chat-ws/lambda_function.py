@@ -1929,11 +1929,10 @@ def generate_node(state: State):
     planning_steps = state["planning_steps"]
     text = ""
     drafts = []
-    for i in range(len(planning_steps)+1):
-        drafts[i] = ""
     
     for i, step in enumerate(planning_steps):
         context = state["relevant_contexts"][i]
+        drafts[i] = ""
         
         chat = get_chat()                       
         write_chain = write_prompt | chat            
