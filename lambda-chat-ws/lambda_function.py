@@ -1694,18 +1694,6 @@ def markdown_to_html(body):
 def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
     print(f"query: {query}, subject_company: {subject_company}")
     
-    response = os_client.search(
-            body = {
-                'size': 1,
-                'query': {
-                    "match": {"id": parent_doc_id}
-                    #"term": {"query": parent_doc_id}
-                }
-            },
-            index = index_name
-        )
-        # print(f"parent_doc_id: {parent_doc_id}, response:{response}")
-        
         
     boolean_filter = {
         "bool": {
