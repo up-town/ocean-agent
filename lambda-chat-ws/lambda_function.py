@@ -1695,36 +1695,11 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     print(f"query: {query}, subject_company: {subject_company}")
     
         
-    boolean_filter = {
-        "bool": {
-            "should":[
-                {"match" : {"metadata.subject_company":subject_company}},
-            ]
-        }
-    }
-    #pre_filter={
-    #    'bool': {
-    #        'must': [
-    #            {
-    #                'doc_level': {
-    #                    'query': 'parent',
-    #                    'fields': ['metadata.doc_level']
-    #                }
-    #            },
-    #            {
-    #                'simple_query_string': {
-    #                    'query': subject_company,
-    #                    'fields': ['metadata.subject_company']
-    #                }
-    #            },
-    #        ],
-    #    }
-    #}
     filter = {"bool": {"filter": {"term": {"metadata.subject_company": subject_company}}}}
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,  
-        pre_filter=boolean_filter
+        pre_filter=filter
         #pre_filter={
         #    "metadata.doc_level": {"$eq": "parent"},
         #    "metadata.subject_company": {"$eq": subject_company}
