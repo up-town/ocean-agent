@@ -2003,6 +2003,31 @@ def run_agent_ocean(connectionId, requestId, query):
     doc = reporter_agent(subtitle, subject_company, sub_questions)        
     final_doc += doc
     
+    subtitle = "재무 현황"    
+    sub_questions = {
+        "financial performance", 
+        "route", 
+        "financial risk",
+        "payment"
+    }        
+    doc = reporter_agent(subtitle, subject_company, sub_questions)        
+    final_doc += doc
+    
+    subtitle = "선대 현황"    
+    sub_questions = {
+        "fleet"
+    }        
+    doc = reporter_agent(subtitle, subject_company, sub_questions)        
+    final_doc += doc
+    
+    subtitle = "종합 평가"    
+    sub_questions = {
+        "Infospectrum level",
+        "Overall assessment"
+    }        
+    doc = reporter_agent(subtitle, subject_company, sub_questions)        
+    final_doc += doc
+    
     # markdown file
     markdown_key = 'markdown/'+f"{subject_company}.md"
     # print('markdown_key: ', markdown_key)
