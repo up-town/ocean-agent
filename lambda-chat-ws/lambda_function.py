@@ -1706,9 +1706,8 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     relevant_documents = []
     docList = []
     for i, re in enumerate(result):
-        print(f"result[{i}]: {re}")
-        print(f"result[{i}] meta: {re.metadata}")
-        print(f"result[{i}] page_content: {re.page_content}")
+        #print(f"result[{i}] metadata: {re[0].metadata}")
+        #print(f"result[{i}] page_content: {re[0].page_content}")
         
         parent_doc_id = doc_level = meta_subject_company = meta_rating_date = ""
         if "parent_doc_id" in re[0].metadata:
