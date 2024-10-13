@@ -1700,10 +1700,14 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             # "doc_level": {"$eq": "child"},
         #    "subject_company": {"$eq": subject_company}
         #}
-        pre_filter={"term": {"subject_company": subject_company}}
+        pre_filter={"match": {"subject_company": subject_company}}
     )
     # pre_filter={"term": {"metadata.id": 3}})
     # "subject_company": {"$eq": subject_company}
+    #  results = client.search(body={
+        # "query": {
+            # "match": {
+                # "director": "miller"}}})
     print('result: ', result)
                 
     relevant_documents = []
@@ -1925,6 +1929,8 @@ def generate_node(state: State):
     planning_steps = state["planning_steps"]
     text = ""
     drafts = []
+    for i in range(len(planning_steps)):
+        drafts[i] = ""
     
     for i, step in enumerate(planning_steps):
         context = state["relevant_contexts"][i]
@@ -1951,7 +1957,7 @@ def generate_node(state: State):
             print(f"--> {draft}")
 
             text += draft + '\n\n'
-            drafts.append(draft)
+            drafts[i] = draft
                 
         except Exception:
             err_msg = traceback.format_exc()
@@ -1991,7 +1997,7 @@ def buildWorkflow():
             
 def run_agent_ocean(connectionId, requestId, query):
     planning_steps = {
-        "1. 회사소개",
+        "1. 회사 소개",
         "2. 주요 영업 활동",
         "3. 재무 현황",
         "4. 선대 현황",
