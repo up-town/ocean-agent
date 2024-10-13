@@ -1850,8 +1850,8 @@ def parallel_retriever(state: State):
             "fleet"
         },
         {
-            "infospectrum level",
-            "overall assessment"
+            "rating", #"infospectrum level"
+            "assessment" # overall assessment"
         }        
     ]
     
@@ -1896,12 +1896,13 @@ def generate_node(state: State):
         "{text}"
         "</text>"
         
-        "보고서 작성시 참고할 문서"
+        "참고 문서"
         "<context>"        
         "{context}"
         "</context>"        
         
-        "보고서 지시 사항, 보고서 단계, 이미 작성된 텍스트, 보고서 작성시 참고할 문서를 참조하여 다음 단계을 계속 작성합니다."
+        "보고서 지시 사항, 보고서 단계, 이미 작성된 텍스트, 참고 문서를 참조하여 다음 단계을 계속 작성합니다."
+        "기업에 대한 구체적인 정보는 받드시 참고 문서를 이용해 작성하고, 모르는 부분은 포함하지 않습니다."
         
         "다음 단계:"
         "<step>"
