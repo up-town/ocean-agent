@@ -1874,8 +1874,6 @@ def parallel_retriever(state: State):
     return {"relevant_contexts": relevant_contexts}
 
 def generate_node(state: State):    
-    context = state['relevant_docs']
-
     write_template = (
         "당신은 기업에 대한 보고서를 작성하는 훌륭한 글쓰기 도우미입니다."
         "아래와 같이 원본 보고서 지시사항과 계획한 보고서 단계를 제공하겠습니다."
