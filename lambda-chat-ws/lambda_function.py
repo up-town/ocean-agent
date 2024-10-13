@@ -782,12 +782,12 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
             doc_level = document[0].metadata['doc_level']
             #print(f"child: parent_doc_id: {parent_doc_id}, doc_level: {doc_level}")
             
-            excerpt, name, url = get_parent_content(parent_doc_id) # use pareant document
-            #print(f"parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, url: {url}, content: {excerpt}")
+            content, name, url = get_parent_content(parent_doc_id) # use pareant document
+            #print(f"parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, url: {url}, content: {content}")
             
             relevant_docs.append(
                 Document(
-                    page_content=excerpt,
+                    page_content=content,
                     metadata={
                         'name': name,
                         'url': url,
@@ -1711,14 +1711,14 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         print(f"result[{i}] page_content: {re.page_content}")
         
         parent_doc_id = doc_level = meta_subject_company = meta_rating_date = ""
-        if "parent_doc_id" in re.metadata:
-            parent_doc_id = re.metadata['parent_doc_id']
-        if "doc_level" in re.metadata:
-            doc_level = re.metadata['doc_level']
-        if "subject_company" in re.metadata:
-            meta_subject_company = re.metadata['subject_company']
-        if "rating_date" in re.metadata:
-            meta_rating_date = re.metadata['rating_date']
+        if "parent_doc_id" in re[0].metadata:
+            parent_doc_id = re[0].metadata['parent_doc_id']
+        if "doc_level" in re[0].metadata:
+            doc_level = re[0].metadata['doc_level']
+        if "subject_company" in re[0].metadata:
+            meta_subject_company = re[0].metadata['subject_company']
+        if "rating_date" in re[0].metadata:
+            meta_rating_date = re[0].metadata['rating_date']
         print(f"--> (metadata) parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, subject_company: {meta_subject_company}, rating_date: {meta_rating_date}")
             
         if parent_doc_id and doc_level=='child' and meta_subject_company==subject_company:
