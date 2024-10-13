@@ -174,7 +174,6 @@ export class CdkOceanAgentStack extends cdk.Stack {
 
     // opensearch
     // Permission for OpenSearch
-    /*
     const domainName = projectName
     const accountId = process.env.CDK_DEFAULT_ACCOUNT;
     const resourceArn = `arn:aws:es:${region}:${accountId}:domain/${domainName}/*`
@@ -234,7 +233,7 @@ export class CdkOceanAgentStack extends cdk.Stack {
       value: 'https://'+domain.domainEndpoint,
       description: 'The endpoint of OpenSearch Domain',
     });
-    opensearch_url = 'https://'+domain.domainEndpoint; */
+    opensearch_url = 'https://'+domain.domainEndpoint;
 
     // s3 
     const s3Bucket = new s3.Bucket(this, `storage-${projectName}`,{

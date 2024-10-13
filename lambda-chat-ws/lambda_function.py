@@ -1823,6 +1823,7 @@ def retrieve(query: str, subject_company: str):
 def parallel_retriever(state: State):
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
+    print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
     
     relevant_contexts = []    
     
