@@ -1894,7 +1894,11 @@ def parallel_retriever(state: State):
             
         relevant_contexts.append(context)
         
-    return {"relevant_contexts": relevant_contexts}
+    return {
+        "subject_company": subject_company,
+        "planning_steps": planning_steps,
+        "relevant_contexts": relevant_contexts
+    }
 
 def generate_node(state: State):    
     write_template = (
