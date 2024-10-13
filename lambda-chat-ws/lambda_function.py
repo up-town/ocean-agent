@@ -1668,6 +1668,29 @@ class State(TypedDict):
     relevant_answers : list[str]
     answer : str
 
+def markdown_to_html(body):
+    html = f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <md-block>
+    </md-block>
+    <script type="module" src="https://md-block.verou.me/md-block.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown-light.css" integrity="sha512-n5zPz6LZB0QV1eraRj4OOxRbsV7a12eAGfFcrJ4bBFxxAwwYDp542z5M0w24tKPEhKk2QzjjIpR5hpOjJtGGoA==" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+</head>
+<body>
+    <div class="markdown-body">
+        <md-block>{body}
+        </md-block>
+    </div>
+</body>
+</html>"""        
+    return html
+
 def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
@@ -1682,10 +1705,13 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     relevant_documents = []
     docList = []
     for re in result:
-        if 'parent_doc_id' in re[0].metadata:
+        if 'parent_doc_id' and 'subject_company' in re[0].metadata:
             parent_doc_id = re[0].metadata['parent_doc_id']
             doc_level = re[0].metadata['doc_level']
-            print(f"doc_level: {doc_level}, parent_doc_id: {parent_doc_id}")
+            subject_company = re[0].metadata['subject_company']
+            rating_date = re[0].metadata['rating_date']
+            
+            print(f"parent_doc_id: {parent_doc_id}, subject_company: {subject_company}, rating_date: {rating_date}")
                         
             if doc_level == 'child':
                 if parent_doc_id in docList:
@@ -1941,10 +1967,47 @@ def run_agent_ocean(connectionId, requestId, query):
     subtitle = "Company Introduction"
     output = app.invoke(inputs, config)
     print('output: ', output['answer'])
+    final_doc = output['answer']
     
+    # markdown file
+    markdown_key = 'markdown/'+f"{subject_company}.md"
+    # print('markdown_key: ', markdown_key)
+        
+    markdown_body = f"## {subject_company}\n\n"+final_doc
+                
+    s3_client = boto3.client('s3')  
+    response = s3_client.put_object(
+        Bucket=s3_bucket,
+        Key=markdown_key,
+        ContentType='text/markdown',
+        Body=markdown_body.encode('utf-8')
+    )
+    # print('response: ', response)
+        
+    markdown_url = f"{path}{markdown_key}"
+    print('markdown_url: ', markdown_url)
+        
+    # html file
+    html_key = 'markdown/'+f"{subject_company}.html"
+        
+    html_body = markdown_to_html(markdown_body)
+    print('html_body: ', html_body)
+        
+    s3_client = boto3.client('s3')  
+    response = s3_client.put_object(
+        Bucket=s3_bucket,
+        Key=html_key,
+        ContentType='text/html',
+        Body=html_body
+    )
+    # print('response: ', response)
+        
+    html_url = f"{path}{html_key}"
+    print('html_url: ', html_url)
     
-    
-    return output['answer']
+    final_answer = final_doc+f"\n<a href={html_url} target=_blank>[미리보기 링크]</a>\n<a href={markdown_url} download=\"{subject_company}.md\">[다운로드 링크]</a>"    
+
+    return final_answer
 
 def getResponse(connectionId, jsonBody):
     print('jsonBody: ', jsonBody)
