@@ -138,7 +138,7 @@ function connect(endpoint, type) {
             }                
             else if(response.status == 'istyping') {
                 feedback.style.display = 'inline';
-                // feedback.innerHTML = '<i>typing a message...</i>'; 
+                feedback.innerHTML = '<i>typing a message...test</i>'; 
             }
             else if(response.status == 'proceeding') {
                 feedback.style.display = 'none';
