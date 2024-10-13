@@ -1850,8 +1850,8 @@ def parallel_retriever(state: State):
             "fleet"
         },
         {
-            "Infospectrum level",
-            "Overall assessment"
+            "infospectrum level",
+            "overall assessment"
         }        
     ]
     
