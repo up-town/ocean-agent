@@ -1900,6 +1900,7 @@ def generate_node(state: State):
     system = (
         "다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다." 
         "Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다."
+        "Markdown 서식으로 작성하세요."
          "결과는 <result> tag를 붙여주세요."   
             
         "<context>"
@@ -1971,7 +1972,7 @@ def run_agent_ocean(connectionId, requestId, query):
     }
     
     # sub title: Company Introduction
-    subtitle = "Company Introduction"
+    subtitle = "회사 소개 (Company Introduction)"
     output = app.invoke(inputs, config)
     print('output: ', output['answer'])
     final_doc = output['answer']
@@ -1980,7 +1981,7 @@ def run_agent_ocean(connectionId, requestId, query):
     markdown_key = 'markdown/'+f"{subject_company}.md"
     # print('markdown_key: ', markdown_key)
         
-    markdown_body = f"## {subject_company}\n\n"+final_doc
+    markdown_body = f"# {subject_company}\n\n## {subtitle}\n\n"+final_doc
                 
     s3_client = boto3.client('s3')  
     response = s3_client.put_object(
