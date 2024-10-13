@@ -1930,7 +1930,7 @@ def generate_node(state: State):
         write_chain = write_prompt | chat            
         try: 
             result = write_chain.invoke({
-                "intructions": instruction,
+                "intruction": instruction,
                 "plan": planning_steps,
                 "text": text,
                 "context": context,
