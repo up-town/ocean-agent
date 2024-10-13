@@ -1662,13 +1662,13 @@ def run_agent_executor(connectionId, requestId, query):
 #########################################################
 
 class State(TypedDict):
-    subtitle: str
-    sub_questions : str
     subject_company: str
-    rating_date: str
-    relevant_docs : list[str]
-    answer : str
-
+    rating_date: str    
+    sub_quries: List[List[str]]    
+    planning_steps: List[str]
+    relevant_contexts : list[str]
+    drafts : List[str]
+    
 def markdown_to_html(body):
     html = f"""
 <!DOCTYPE html>
@@ -1825,73 +1825,129 @@ def retrieve(query: str, subject_company: str):
     return filtered_docs
 
 def parallel_retriever(state: State):
-    sub_questions = state["sub_questions"]
-    subject_company = state["subject_company"]
-    
-    relevant_docs = []
-    for i, sub_question in enumerate(sub_questions):
-        # print(f"sub_question: {sub_question}")
+    subject_company = state["subject_company"]    
+    relevant_context = state["relevant_context"]
+    planning_steps = state["planning_steps"]
+    context = ""
+    for i, step in enumerate(planning_steps):
+        print(f"{i}: {step}")
         
-        docs = retrieve(sub_question, subject_company)
+        sub_quries = state["sub_quries"][i]        
+        docs = retrieve(sub_quries, subject_company)
         
-        print(f"---> {i}: sub_question: {sub_question}, docs: {docs}")
+        print(f"---> {i}: sub_quries: {sub_quries}, docs: {docs}")
         
-        for doc in docs:
-            relevant_docs.append(doc)
+        for doc in docs:            
+            context += doc.page_content
         
-    return {"relevant_docs": relevant_docs}
+        relevant_context.append(context)
+        
+    return {"relevant_context": relevant_context}
 
 def generate_node(state: State):    
     context = state['relevant_docs']
-    question = f"{state['subject_company']}에 대해 소개합니다."
-    
-    system = (
-        "Assistant는 기업 보고서를 분석하여 정확한 정보르 전달하는 인공지는 비서입니다."
-        "다음의 <title> tag은 보고서의 제목이고, <context> tag는 해당 기업과 관련된 자료입니다."
-        "이 보고서를 읽는 사람이 해당 기업의 상황을 쉽고 정확하게 이해하도록 세부 정보를 충분히 제공합니다." 
-        "Markdown 서식으로 작성하세요."
-        "결과는 <result> tag를 붙여주세요."
+
+    write_template = (
+        "당신은 기업에 대한 보고서를 작성하는 훌륭한 글쓰기 도우미입니다."
+        "아래와 같이 원본 보고서 지시사항과 계획한 보고서 단계를 제공하겠습니다."
+        "또한 제가 이미 작성한 텍스트를 제공합니다."
         
-        "<title>"
-        "{subtitle}"
-        "</title>"
-            
-        "<context>"
+        "보고서 지시사항:"
+        "<instruction>"
+        "{instruction}"
+        "</instruction>"
+        
+        "보고서 단계:"
+        "<plan>"
+        "{plan}"
+        "</plan>"
+        
+        "이미 작성한 텍스트:"
+        "<text>"
+        "{text}"
+        "</text>"
+        
+        "보고서 작성시 참고할 문서"
+        "<context>"        
         "{context}"
-        "</context>"
+        "</context>"        
+        
+        "보고서 지시 사항, 보고서 단계, 이미 작성된 텍스트, 보고서 작성시 참고할 문서를 참조하여 다음 단계을 계속 작성합니다."
+        
+        "다음 단계:"
+        "<step>"
+        "{STEP}"
+        "</step>"
+                
+        "보고서의 내용이 끊어지지 않고 잘 이해되도록 하나의 문단을 충분히 길게 작성합니다."
+        "필요하다면 앞에 작은 부제를 추가할 수 있습니다."
+        "이미 작성된 텍스트를 반복하지 말고 작성한 문단만 출력하세요."                
+        "Markdown 포맷으로 서식을 작성하세요."
+        "최종 결과에 <result> tag를 붙여주세요."
     )
     
-    human = "{input}"
-    
-    prompt = ChatPromptTemplate.from_messages([("system", system), ("human", human)])
+    write_prompt = ChatPromptTemplate.from_messages([
+        ("human", write_template)
+    ])
     # print('prompt: ', prompt)
-
-    chat = get_chat()                   
     
-    chain = prompt | chat    
-    try: 
-        result = chain.invoke(
-            {
-                "subtitle": state['subtitle'],
-                "context": context,
-                "input": question,
-            }
-        )        
-        output = result.content        
-        output = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
-        print('output: ', output)        
+    instruction = f"{state['subject_company']} 회사에 대해 소개해 주세요."
+    planning_steps = state["planning_steps"]
+    text = ""
+    drafts = state["drafts"]
+    
+    for i, step in enumerate(planning_steps):
+        context = state["relevant_contexts"][i]
         
-    except Exception:
-        err_msg = traceback.format_exc()
-        print('error message: ', err_msg)        
-            
-        raise Exception ("Not able to request to LLM")
+        chat = get_chat()                       
+        write_chain = write_prompt | chat            
+        try: 
+            result = write_chain.invoke({
+                "intructions": instruction,
+                "plan": planning_steps,
+                "text": text,
+                "context": context,
+                "STEP": planning_steps[i]
+            })
 
-    return {"answer": output}
+            output = result.content
+            draft = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
+            print('draft: ', draft)
+                
+            if draft.find('#')!=-1 and draft.find('#')!=0:
+                draft = draft[draft.find('#'):]
+                    
+            print(f"--> step:{step}")
+            print(f"--> {draft}")
 
+            text += draft + '\n\n'
+            drafts.append(draft)
+                
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)                        
+            raise Exception ("Not able to request to LLM")
+
+    return {
+        "drafts": drafts
+    }
+
+#def should_continue(state: State):
+#    print('###### continue_to_generate ######')
+#    print('state (continue_to_generate): ', state)
+    
+#    current_step = state["current_step"]
+#    planning_steps = state["planning_steps"]
+#    print('current_step: ', current_step)
+    
+#    if current_step >= len(planning_steps):
+#        return "end"
+#    return "continue"
+    
 def buildWorkflow():
     workflow = StateGraph(State)
     workflow.add_node("retrieve", parallel_retriever)
+        
     workflow.add_node("generate", generate_node)
     
     # Set entry point
@@ -1902,78 +1958,68 @@ def buildWorkflow():
     workflow.add_edge("generate", END)
     
     return workflow.compile()
-
-def reporter_agent(subtitle, subject_company, sub_questions):
+            
+def run_agent_ocean(connectionId, requestId, query):
+    planning_steps = {
+        "1. 회사소개",
+        "2. 주요 영업 활동",
+        "3. 재무 현황",
+        "4. 선대 현황",
+        "5. 종합 평가"
+    }
+    
+    sub_quries = [
+        {
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        },
+        {
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        },
+        {
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        },
+        {
+            "Infospectrum level",
+            "Overall assessment"
+        }        
+    ]
+    
+    subject_company = query
+    
+    isTyping(connectionId, requestId, "")
     app = buildWorkflow()
-
+        
     # Run the workflow
     inputs = {
-        "subtitle": subtitle,
         "subject_company": subject_company,
-        "sub_questions": sub_questions
+        "planning_steps": planning_steps,
+        "sub_queries": sub_quries
     }
     config = {
         "recursion_limit": 50
     }
 
-    # sub title: Company Introduction
-    output = app.invoke(inputs, config)
-    print('output: ', output['answer'])
+    output = app.invoke(inputs, config)   
+    print('output: ', output)
     
-    return output['answer']
-            
-def run_agent_ocean(connectionId, requestId, query):
-    app = buildWorkflow()
-    
-    isTyping(connectionId, requestId, "")
-    
-    subject_company = query
-    final_doc = ""
+    drafts = output['drafts']
+    print('drafts: ', drafts)
 
-    subtitle = "회사소개"    
-    sub_questions = {
-        "establish", 
-        "location", 
-        "management", 
-        "affiliated"
-    }
-    doc = reporter_agent(subtitle, subject_company, sub_questions)        
-    final_doc += doc
-    
-    subtitle = "주요 영업 활동"    
-    sub_questions = {
-        "cargo", 
-        "route", 
-        "owned/chartered", 
-        "strategy"
-    }        
-    doc = reporter_agent(subtitle, subject_company, sub_questions)        
-    final_doc += doc
-    
-    subtitle = "재무 현황"    
-    sub_questions = {
-        "financial performance", 
-        "route", 
-        "financial risk",
-        "payment"
-    }        
-    doc = reporter_agent(subtitle, subject_company, sub_questions)        
-    final_doc += doc
-    
-    subtitle = "선대 현황"    
-    sub_questions = {
-        "fleet"
-    }        
-    doc = reporter_agent(subtitle, subject_company, sub_questions)        
-    final_doc += doc
-    
-    subtitle = "종합 평가"    
-    sub_questions = {
-        "Infospectrum level",
-        "Overall assessment"
-    }        
-    doc = reporter_agent(subtitle, subject_company, sub_questions)        
-    final_doc += doc
+    for i, draft in enumerate(drafts):
+        if i==0:
+            final_doc = draft
+        else:
+            final_doc += '\n\n'+draft
+    print('final_doc: ', final_doc)
     
     # markdown file
     markdown_key = 'markdown/'+f"{subject_company}.md"
