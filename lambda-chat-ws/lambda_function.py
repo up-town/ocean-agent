@@ -1849,6 +1849,9 @@ def parallel_retriever(state: State):
             "payment"
         },
         {
+            "fleet",
+        }
+        {
             "Infospectrum level",
             "Overall assessment"
         }        
