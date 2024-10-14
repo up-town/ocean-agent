@@ -1668,7 +1668,7 @@ class State(TypedDict):
     drafts : List[str]
     final_doc: str
     
-def markdown_to_html(body):
+def markdown_to_html(body, reference):
     html = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -1687,6 +1687,7 @@ def markdown_to_html(body):
         <md-block>{body}
         </md-block>
     </div>
+    {reference}
 </body>
 </html>"""        
     return html
@@ -2046,8 +2047,12 @@ def run_agent_ocean(connectionId, requestId, query):
         
     # html file
     html_key = 'markdown/'+f"{subject_company}.html"
+    
+    reference = []
+    if reference_docs:
+        reference = get_references(reference_docs)
         
-    html_body = markdown_to_html(markdown_body)
+    html_body = markdown_to_html(markdown_body, reference)
     print('html_body: ', html_body)
         
     s3_client = boto3.client('s3')  
