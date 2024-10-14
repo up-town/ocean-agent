@@ -284,13 +284,13 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
     width, height = img.size 
     print(f"(original) width: {width}, height: {height}, size: {width*height}")
     
-    # if pdf_profile=='ocean:
-    area = (0, 175, width, height-175)
-    cropped_img = img.crop(area)
-        
-    width, height = cropped_img.size 
-    print(f"(croped) width: {width}, height: {height}, size: {width*height}")
+    if pdf_profile=='ocean':
+        area = (0, 175, width, height-175)
+        cropped_img = img.crop(area)
             
+        width, height = cropped_img.size 
+        print(f"(croped) width: {width}, height: {height}, size: {width*height}")
+                
     if width < 100 or height < 100:  # skip small size image
         return []
                 
@@ -469,6 +469,7 @@ def add_to_opensearch(docs, key):
                 
                 child_docs = []
                        
+                page = subject_company = rating_date = ""
                 for i, doc in enumerate(parent_docs):
                     _id = parent_doc_ids[i]
                     sub_docs = child_splitter.split_documents([doc])
@@ -840,8 +841,8 @@ def load_document(file_type, key):
             for i, page in enumerate(reader.pages):
                 print(f"page[{i}]: {page}")
                 
-                if i==0 and pdf_profile == 'ocean': # profile page
-                    print('skip the first page!')
+                if i<=1 and pdf_profile == 'ocean': # profile page
+                    print('skip the first 2 page!')
                     continue
                     
                 texts.append(page.extract_text())
