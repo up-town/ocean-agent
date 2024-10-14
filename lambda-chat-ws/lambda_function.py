@@ -2004,13 +2004,13 @@ def buildWorkflow():
     return workflow.compile()
             
 def run_agent_ocean(connectionId, requestId, query):
-    planning_steps = {
+    planning_steps = [
         "1. 회사 소개",
         "2. 주요 영업 활동",
         "3. 재무 현황",
         "4. 선대 현황",
         "5. 종합 평가"
-    }
+    ]
     
     subject_company = query
     
