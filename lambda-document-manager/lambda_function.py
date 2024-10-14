@@ -272,7 +272,6 @@ def store_document_for_opensearch(file_type, key):
     
     return ids, files
 
-# ---->
 def store_image_for_opensearch(key, page, subject_company, rating_date):
     print('extract text from an image: ', key) 
                                             
