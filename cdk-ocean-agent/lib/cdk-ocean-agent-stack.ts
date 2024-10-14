@@ -188,7 +188,7 @@ export class CdkOceanAgentStack extends cdk.Stack {
       resources: [resourceArn],      
       actions: ['es:*'],
       effect: iam.Effect.ALLOW,
-      principals: [new iam.AnyPrincipal()],      
+      principals: [new iam.AnyPrincipal()],
     });  
 
     const domain = new opensearch.Domain(this, 'Domain', {

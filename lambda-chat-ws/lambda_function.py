@@ -1666,6 +1666,7 @@ class State(TypedDict):
     planning_steps: List[str]
     relevant_contexts : list[str]
     drafts : List[str]
+    final_doc: str
     
 def markdown_to_html(body):
     html = f"""
@@ -1740,6 +1741,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     return relevant_documents
         
 def retrieve(query: str, subject_company: str):
+    print(f'###### retrieve: {query} ######')
     global reference_docs
     
     top_k = 4
@@ -1820,6 +1822,7 @@ def retrieve(query: str, subject_company: str):
     return filtered_docs
 
 def parallel_retriever(state: State):
+    print('###### parallel_retriever ######')
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
@@ -1875,6 +1878,7 @@ def parallel_retriever(state: State):
     }
 
 def generate_node(state: State):    
+    print('###### generate_node ######')
     write_template = (
         "당신은 기업에 대한 보고서를 작성하는 훌륭한 글쓰기 도우미입니다."
         "아래와 같이 원본 보고서 지시사항과 계획한 보고서 단계를 제공하겠습니다."
@@ -1959,7 +1963,8 @@ def generate_node(state: State):
             raise Exception ("Not able to request to LLM")
 
     return {
-        "drafts": drafts
+        "drafts": drafts,
+        "final_doc": text
     }
 
 #def should_continue(state: State):
@@ -2016,14 +2021,10 @@ def run_agent_ocean(connectionId, requestId, query):
     print('output: ', output)
     
     drafts = output['drafts']
-    print('drafts: ', drafts)
-
     for i, draft in enumerate(drafts):
-        if i==0:
-            final_doc = draft
-        else:
-            final_doc += '\n\n'+draft
-    print('final_doc: ', final_doc)
+        print(f"{i}: {drafts[i]}")
+
+    final_doc = output['final_doc']
     
     # markdown file
     markdown_key = 'markdown/'+f"{subject_company}.md"
