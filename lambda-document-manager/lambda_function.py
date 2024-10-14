@@ -250,7 +250,7 @@ def store_document_for_opensearch(file_type, key):
             'name': key,
             'url': path+parse.quote(key),
             'subject_company': subject_company,
-            # 'rating_date': rating_date
+            'rating_date': rating_date
         }
     ))
         
@@ -263,7 +263,7 @@ def store_document_for_opensearch(file_type, key):
                 'url': path+parse.quote(table['name']),
                 'page': table['page'],
                 'subject_company': subject_company,
-                # 'rating_date': rating_date
+                'rating_date': rating_date
             }
         ))  
     print('docs: ', docs)
@@ -338,7 +338,7 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
                         'url': path+parse.quote(key),
                         'page': page,
                         'subject_company': subject_company,
-                        # 'rating_date': rating_date
+                        'rating_date': rating_date
                     }
                 )
             )         
@@ -482,15 +482,15 @@ def add_to_opensearch(docs, key):
                         page = doc.metadata["page"]
                     if "subject_company" in doc.metadata:
                         subject_company = doc.metadata["subject_company"]
-                    #if "rating_date" in doc.metadata:
-                    #    rating_date = doc.metadata["rating_date"]
+                    if "rating_date" in doc.metadata:
+                        rating_date = doc.metadata["rating_date"]
                     
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
                         _doc.metadata["doc_level"] = "child"
                         _doc.metadata["page"] = page                        
                         _doc.metadata["subject_company"] = subject_company
-                        #_doc.metadata["rating_date"] = rating_date
+                        _doc.metadata["rating_date"] = rating_date
                         
                     child_docs.extend(sub_docs)
                 print('child_docs: ', child_docs)
