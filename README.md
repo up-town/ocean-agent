@@ -514,7 +514,7 @@ def generate_node(state: State):
 
 ### 기업 보고서 작성
 
-메뉴에서 "Ocean Agent"를 선택한 후에 "Suzano SA"로 회사의 이름만을 입력합니다. 미리보기 링크를 누르면 html로 문서 내용을 공유 할 수 있습니다. 다운로드 링크를 누르면 markdown 형태로 파일을 다운로드 해서 github 또는 메일로 공유할 수 있습니다. [Markdown 문서의 예](./contents/Suzano_SA.md)는 편의에 따라 pdf등의 문서로 변환할 수 있습니다.
+메뉴에서 "Ocean Agent"를 선택한 후에 "Suzano SA"로 회사의 이름만을 입력합니다. 미리보기 링크를 누르면 html로 문서 내용을 공유 할 수 있습니다. 다운로드 링크를 누르면 markdown 형태로 파일을 다운로드 해서 github 또는 메일로 공유할 수 있습니다. [Markdown 문서의 예](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Suzano%20SA.md)는 편의에 따라 pdf등의 문서로 변환할 수 있습니다.
 
 <img src="./contents/Suzano_SA.png" width="700">
 
