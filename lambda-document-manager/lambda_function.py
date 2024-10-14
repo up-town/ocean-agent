@@ -482,8 +482,8 @@ def add_to_opensearch(docs, key):
                         page = doc.metadata["page"]
                     if "subject_company" in doc.metadata:
                         subject_company = doc.metadata["subject_company"]
-                    if "rating_date" in doc.metadata:
-                        rating_date = doc.metadata["rating_date"]
+                    #if "rating_date" in doc.metadata:
+                    #    rating_date = doc.metadata["rating_date"]
                     
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
@@ -492,8 +492,8 @@ def add_to_opensearch(docs, key):
                         
                         if subject_company:
                             _doc.metadata["subject_company"] = subject_company
-                        if rating_date:
-                            _doc.metadata["rating_date"] = rating_date
+                        #if rating_date:
+                        #    _doc.metadata["rating_date"] = rating_date
                         
                     child_docs.extend(sub_docs)
                 print('child_docs: ', child_docs)
