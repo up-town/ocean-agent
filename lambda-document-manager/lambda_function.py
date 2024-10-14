@@ -281,7 +281,14 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
     img = Image.open(BytesIO(image_content))
                         
     width, height = img.size 
-    print(f"width: {width}, height: {height}, size: {width*height}")
+    print(f"(original) width: {width}, height: {height}, size: {width*height}")
+    
+    # if subject_company:
+    area = (0, 40, width, height-30)
+    cropped_img = img.crop(area)
+        
+    width, height = cropped_img.size 
+    print(f"(croped) width: {width}, height: {height}, size: {width*height}")
             
     if width < 100 or height < 100:  # skip small size image
         return []
@@ -303,11 +310,11 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
                                                                 
         # extract text from the image
         chat = get_multimodal()
-        text = extract_text(chat, img_base64)
+        text = extract_text(chat, img_base64, subject_company)
         extracted_text = text[text.find('<result>')+8:len(text)-9] # remove <result> tag
         #print('extracted_text: ', extracted_text)
         
-        summary = summary_image(chat, img_base64)
+        summary = summary_image(chat, img_base64, subject_company)
         image_summary = summary[summary.find('<result>')+8:len(summary)-9] # remove <result> tag
         #print('image summary: ', image_summary)
         
@@ -1090,8 +1097,11 @@ def get_parameter(model_type):
             "stop_sequences": [HUMAN_PROMPT]            
         }
         
-def extract_text(chat, img_base64):    
-    query = "텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
+def extract_text(chat, img_base64, subject_company):
+    if subject_company:
+        query = f"이 이미지는 {subject_company}에 대한 정보를 포함하고 있습니다. 텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
+    else:
+        query = query = "텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
     
     messages = [
         HumanMessage(
@@ -1121,8 +1131,11 @@ def extract_text(chat, img_base64):
     
     return extracted_text
 
-def summary_image(chat, img_base64):    
-    query = "이미지가 의미하는 내용을 풀어서 자세히 알려주세요. <result> tag를 붙여주세요."
+def summary_image(chat, img_base64, subject_company):    
+    if subject_company:
+        query = f"이 이미지는 {subject_company}에 대한 정보를 포함하고 있습니다. 이미지가 의미하는 내용을 풀어서 자세히 알려주세요. <result> tag를 붙여주세요."
+    else:
+        query = "이미지가 의미하는 내용을 풀어서 자세히 알려주세요. <result> tag를 붙여주세요."
     
     messages = [
         HumanMessage(
