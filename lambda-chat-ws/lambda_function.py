@@ -914,6 +914,37 @@ def get_references(docs):
             
     return reference
 
+def get_references_for_html(docs):
+    reference = ""
+    for i, doc in enumerate(docs):
+        page = ""
+        if "page" in doc.metadata:
+            page = doc.metadata['page']
+            #print('page: ', page)            
+        url = ""
+        if "url" in doc.metadata:
+            url = doc.metadata['url']
+            #print('url: ', url)                
+        name = ""
+        if "name" in doc.metadata:
+            name = doc.metadata['name']
+            #print('name: ', name)     
+           
+        excerpt = ""+doc.page_content
+
+        excerpt = re.sub('"', '', excerpt)
+        print('length: ', len(excerpt))
+        
+        nameList = []
+        if name in nameList:
+            print('duplicated url')
+            continue
+        else:
+            reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>\n\n"
+            nameList.append(name)
+            
+    return reference
+
 def general_conversation(connectionId, requestId, chat, query):
     if isKorean(query)==True :
         system = (
@@ -1671,9 +1702,10 @@ class State(TypedDict):
     planning_steps: List[str]
     relevant_contexts : list[str]
     drafts : List[str]
-    final_doc: str
     
 def markdown_to_html(body, reference):
+    body = body + f"\n\n### 참고자료\n\n\n"
+    
     html = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -1832,6 +1864,7 @@ def parallel_retriever(state: State):
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
+    
     relevant_contexts = []    
     
     sub_quries = [
@@ -1931,8 +1964,6 @@ def generate_node(state: State):
     
     instruction = f"{state['subject_company']} 회사에 대해 소개해 주세요."
     planning_steps = state["planning_steps"]
-    print(f"planning_steps: {planning_steps}")
-    
     text = ""
     drafts = []
     
@@ -1942,38 +1973,35 @@ def generate_node(state: State):
         
         chat = get_chat()                       
         write_chain = write_prompt | chat            
-        #try: 
-        result = write_chain.invoke({
-            "instruction": instruction,
-            "plan": planning_steps,
-            "text": text,
-            "context": context,
-            "STEP": step
-        })
+        try: 
+            result = write_chain.invoke({
+                "instruction": instruction,
+                "plan": planning_steps,
+                "text": text,
+                "context": context,
+                "STEP": step
+            })
 
-        output = result.content
-        draft = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
-        print('draft: ', draft)
+            output = result.content
+            draft = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
+            print('draft: ', draft)
                 
-        if draft.find('#')!=-1 and draft.find('#')!=0:
-            draft = draft[draft.find('#'):]
+            if draft.find('#')!=-1 and draft.find('#')!=0:
+                draft = draft[draft.find('#'):]
                     
-        print(f"--> step:{step}")
-        print(f"--> {draft}")
+            print(f"--> step:{step}")
+            print(f"--> {draft}")
 
-        text += draft + '\n\n'
-        drafts.append(draft)
+            text += draft + '\n\n'
+            drafts.append(draft)
                 
-        #except Exception:
-        #    err_msg = traceback.format_exc()
-        #    print('error message: ', err_msg)                        
-        #    raise Exception ("Not able to request to LLM")
-        
-        print('final_doc: ', text)
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)                        
+            raise Exception ("Not able to request to LLM")
 
     return {
-        "drafts": drafts,
-        "final_doc": text
+        "drafts": drafts
     }
 
 #def should_continue(state: State):
@@ -2004,20 +2032,19 @@ def buildWorkflow():
     return workflow.compile()
             
 def run_agent_ocean(connectionId, requestId, query):
-    planning_steps = [
+    planning_steps = {
         "1. 회사 소개",
         "2. 주요 영업 활동",
         "3. 재무 현황",
         "4. 선대 현황",
         "5. 종합 평가"
-    ]
+    }
     
     subject_company = query
     
     isTyping(connectionId, requestId, "")
     app = buildWorkflow()
         
-    print('planning_steps', planning_steps)
     # Run the workflow
     inputs = {
         "subject_company": subject_company,
@@ -2028,14 +2055,14 @@ def run_agent_ocean(connectionId, requestId, query):
     }
 
     output = app.invoke(inputs, config)   
-    # print('output: ', output)
+    print('output: ', output)
     
+    final_doc = ""
     drafts = output['drafts']
     for i, draft in enumerate(drafts):
         print(f"{i}: {draft}")
+        final_doc += draft
 
-    final_doc = output['final_doc']
-    
     # markdown file
     markdown_key = 'markdown/'+f"{subject_company}.md"
     # print('markdown_key: ', markdown_key)
@@ -2059,7 +2086,7 @@ def run_agent_ocean(connectionId, requestId, query):
     
     reference = []
     if reference_docs:
-        reference = get_references(reference_docs)
+        reference = get_references_for_html(reference_docs)
         
     html_body = markdown_to_html(markdown_body, reference)
     print('html_body: ', html_body)
