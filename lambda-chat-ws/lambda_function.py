@@ -864,6 +864,7 @@ def check_duplication(docs):
 
 def get_references(docs):
     reference = "\n\nFrom\n"
+    nameList = []
     for i, doc in enumerate(docs):
         page = ""
         if "page" in doc.metadata:
@@ -902,11 +903,9 @@ def get_references(docs):
                 reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
             else:
                 reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
-        else:
-            nameList = []
+        else:            
             if name in nameList:
                 print('duplicated!')
-                continue
             else:
                 #reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}\n"
                 reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>\n"
@@ -916,6 +915,7 @@ def get_references(docs):
 
 def get_references_for_html(docs):
     reference = ""
+    nameList = []
     for i, doc in enumerate(docs):
         page = ""
         if "page" in doc.metadata:
@@ -935,12 +935,10 @@ def get_references_for_html(docs):
         excerpt = re.sub('"', '', excerpt)
         print('length: ', len(excerpt))
         
-        nameList = []
         if name in nameList:
             print('duplicated!')
-            continue
         else:
-            reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a><br><br>"
+            reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a><br>"
             nameList.append(name)
             
     return reference
