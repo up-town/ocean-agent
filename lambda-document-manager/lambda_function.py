@@ -250,7 +250,7 @@ def store_document_for_opensearch(file_type, key):
             'name': key,
             'url': path+parse.quote(key),
             'subject_company': subject_company,
-            'rating_date': rating_date
+            # 'rating_date': rating_date
         }
     ))
         
@@ -263,7 +263,7 @@ def store_document_for_opensearch(file_type, key):
                 'url': path+parse.quote(table['name']),
                 'page': table['page'],
                 'subject_company': subject_company,
-                'rating_date': rating_date
+                # 'rating_date': rating_date
             }
         ))  
     print('docs: ', docs)
@@ -338,7 +338,7 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
                         'url': path+parse.quote(key),
                         'page': page,
                         'subject_company': subject_company,
-                        'rating_date': rating_date
+                        # 'rating_date': rating_date
                     }
                 )
             )         
@@ -482,15 +482,15 @@ def add_to_opensearch(docs, key):
                         page = doc.metadata["page"]
                     if "subject_company" in doc.metadata:
                         subject_company = doc.metadata["subject_company"]
-                    if "rating_date" in doc.metadata:
-                        rating_date = doc.metadata["rating_date"]
+                    #if "rating_date" in doc.metadata:
+                    #    rating_date = doc.metadata["rating_date"]
                     
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
                         _doc.metadata["doc_level"] = "child"
                         _doc.metadata["page"] = page                        
                         _doc.metadata["subject_company"] = subject_company
-                        _doc.metadata["rating_date"] = rating_date
+                        #_doc.metadata["rating_date"] = rating_date
                         
                     child_docs.extend(sub_docs)
                 print('child_docs: ', child_docs)
@@ -774,7 +774,7 @@ def extract_table_image(page, index, table_count, bbox, key, subject_company, ra
             "ext": 'png',
             "page": str(index),
             "company": subject_company,
-            "date": rating_date
+            # "date": rating_date
         }
     else:
         table_meta = {
@@ -799,7 +799,7 @@ def get_profile_of_doc(content: str):
     
     class Profile(BaseModel):
         subject_company: str = Field(description="The value of 'Subject company'")
-        rating_date: str = Field(description="The value of 'Rating data'")
+        # rating_date: str = Field(description="The value of 'Rating data'")
     
     subject_company = rating_date = ""
     for attempt in range(5):
@@ -812,10 +812,10 @@ def get_profile_of_doc(content: str):
         if not info['parsed'] == None:
             parsed_info = info['parsed']
             subject_company = parsed_info.subject_company
-            rating_date = parsed_info.rating_date
+            # rating_date = parsed_info.rating_date
                             
             print('subject_company: ', subject_company)            
-            print('rating_date: ', rating_date)
+            # print('rating_date: ', rating_date)
             break
     return subject_company, rating_date        
                          
@@ -894,10 +894,10 @@ def load_document(file_type, key):
                     subject_company, rating_date_ori = get_profile_of_doc(texts[i])
                     print('subject_company: ', subject_company)
                     
-                    from datetime import datetime
-                    d = datetime.strptime(rating_date_ori, '%d %B %Y')
-                    rating_date = str(d)[:10] 
-                    print('rating_date: ', rating_date)
+                    #from datetime import datetime
+                    #d = datetime.strptime(rating_date_ori, '%d %B %Y')
+                    #rating_date = str(d)[:10] 
+                    #print('rating_date: ', rating_date)
 
             contents = '\n'.join(texts)
                         
@@ -976,7 +976,7 @@ def load_document(file_type, key):
                                 "ext": 'png',
                                 "page": str(i),
                                 "company": subject_company,
-                                "date": rating_date
+                                # "date": rating_date
                             }
                         else: 
                             img_meta = {
@@ -1296,9 +1296,9 @@ def lambda_handler(event, context):
                     if 'company' in s3obj['Metadata']:
                         subject_company = s3obj['Metadata']['company']
                         print('subject_company: ', subject_company)
-                    if 'date' in s3obj['Metadata']:
-                        rating_date = s3obj['Metadata']['date']
-                        print('rating_date: ', rating_date)
+                    #if 'date' in s3obj['Metadata']:
+                    #    rating_date = s3obj['Metadata']['date']
+                    #    print('rating_date: ', rating_date)
                 
                 #attributes = ['ETag', 'Checksum', 'ObjectParts', 'StorageClass', 'ObjectSize']
                 #result = s3_client.get_object_attributes(Bucket=bucket, Key=key, ObjectAttributes=attributes)  
