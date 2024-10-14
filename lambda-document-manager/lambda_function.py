@@ -284,7 +284,7 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
     width, height = img.size 
     print(f"(original) width: {width}, height: {height}, size: {width*height}")
     
-    pos = key.find('/')
+    pos = key.rfind('/')
     prefix = key[pos+1:pos+5]
     print('img_prefix: ', prefix)    
     if pdf_profile=='ocean' and prefix == "img_":
