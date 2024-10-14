@@ -512,6 +512,11 @@ def generate_node(state: State):
 
 ![noname](https://github.com/user-attachments/assets/74de5172-acc8-440e-8f11-2ce0385d4099)
 
+### 기업 보고서 작성
+
+메뉴에서 "Ocean Agent"를 선택한 후에 "Suzano SA"로 회사의 이름만을 입력합니다. 
+
+<img src="./contents/Suzano_SA.png" width="600">
 
 ## 결론
 
