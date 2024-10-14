@@ -272,6 +272,7 @@ def store_document_for_opensearch(file_type, key):
     
     return ids, files
 
+# ---->
 def store_image_for_opensearch(key, page, subject_company, rating_date):
     print('extract text from an image: ', key) 
                                             
@@ -283,8 +284,8 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
     width, height = img.size 
     print(f"(original) width: {width}, height: {height}, size: {width*height}")
     
-    # if subject_company:
-    area = (0, 40, width, height-30)
+    # if pdf_profile=='ocean:
+    area = (0, 175, width, height-175)
     cropped_img = img.crop(area)
         
     width, height = cropped_img.size 
@@ -298,7 +299,7 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
         width = int(width/2)
         height = int(height/2)
         isResized = True
-        print(f"width: {width}, height: {height}, size: {width*height}")
+        print(f"(resized) width: {width}, height: {height}, size: {width*height}")
            
     try:             
         if isResized:
@@ -838,6 +839,11 @@ def load_document(file_type, key):
             imgList = []
             for i, page in enumerate(reader.pages):
                 print(f"page[{i}]: {page}")
+                
+                if i==0 and pdf_profile == 'ocean': # profile page
+                    print('skip the first page!')
+                    continue
+                    
                 texts.append(page.extract_text())
                 
                 # annotation
@@ -1273,7 +1279,7 @@ def lambda_handler(event, context):
                     
         elif eventName == "ObjectCreated:Put" or eventName == "ObjectCreated:CompleteMultipartUpload":
             size = 0
-            page = subject_company = date = ""
+            page = subject_company = rating_date = ""
             try:
                 s3obj = s3_client.get_object(Bucket=bucket, Key=key)
                 print(f"Got object: {s3obj}")
