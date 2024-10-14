@@ -842,9 +842,8 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
 
 #########################################################
 
-contentList = []
 def check_duplication(docs):
-    global contentList
+    contentList = []
     length_original = len(docs)
     
     updated_docs = []
@@ -1814,19 +1813,8 @@ def retrieve(query: str, subject_company: str):
     
     filtered_docs = grade_documents(query, docs) # grading
     
-    # check duplication
-    docList = []    
-    updated_docs = []
-    print('length of relevant_docs:', len(docs))
-    for doc in docs:            
-        # print('excerpt: ', doc['metadata']['excerpt'])
-        if doc.page_content in docList:
-            print('duplicated!')
-            continue
-        docList.append(doc.page_content)
-        updated_docs.append(doc)                    
-    filtered_docs = updated_docs
-
+    filtered_docs = check_duplication(filtered_docs) # check duplication
+            
     reference_docs += filtered_docs # add to reference
     
     return filtered_docs
