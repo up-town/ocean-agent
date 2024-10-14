@@ -1941,32 +1941,34 @@ def generate_node(state: State):
         
         chat = get_chat()                       
         write_chain = write_prompt | chat            
-        try: 
-            result = write_chain.invoke({
-                "instruction": instruction,
-                "plan": planning_steps,
-                "text": text,
-                "context": context,
-                "STEP": step
-            })
+        #try: 
+        result = write_chain.invoke({
+            "instruction": instruction,
+            "plan": planning_steps,
+            "text": text,
+            "context": context,
+            "STEP": step
+        })
 
-            output = result.content
-            draft = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
-            print('draft: ', draft)
+        output = result.content
+        draft = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
+        print('draft: ', draft)
                 
-            if draft.find('#')!=-1 and draft.find('#')!=0:
-                draft = draft[draft.find('#'):]
+        if draft.find('#')!=-1 and draft.find('#')!=0:
+            draft = draft[draft.find('#'):]
                     
-            print(f"--> step:{step}")
-            print(f"--> {draft}")
+        print(f"--> step:{step}")
+        print(f"--> {draft}")
 
-            text += draft + '\n\n'
-            drafts.append(draft)
+        text += draft + '\n\n'
+        drafts.append(draft)
                 
-        except Exception:
-            err_msg = traceback.format_exc()
-            print('error message: ', err_msg)                        
-            raise Exception ("Not able to request to LLM")
+        #except Exception:
+        #    err_msg = traceback.format_exc()
+        #    print('error message: ', err_msg)                        
+        #    raise Exception ("Not able to request to LLM")
+        
+        print('final_doc: ', text)
 
     return {
         "drafts": drafts,
