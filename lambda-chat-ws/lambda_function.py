@@ -903,10 +903,15 @@ def get_references(docs):
             else:
                 reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
         else:
-            if page:
-                reference = reference + f"{i+1}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}\n"
+            urlList = []
+            if url in urlList:
+                print('duplicated url')
+                continue
             else:
-                reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}\n"
+                #reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}\n"
+                reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>\n"
+                urlList.append(url)
+            
     return reference
 
 def general_conversation(connectionId, requestId, chat, query):
