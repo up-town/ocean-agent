@@ -289,9 +289,9 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
     print('img_prefix: ', prefix)    
     if pdf_profile=='ocean' and prefix == "img_":
         area = (0, 175, width, height-175)
-        cropped_img = img.crop(area)
+        img = img.crop(area)
             
-        width, height = cropped_img.size 
+        width, height = img.size 
         print(f"(croped) width: {width}, height: {height}, size: {width*height}")
                 
     if width < 100 or height < 100:  # skip small size image
