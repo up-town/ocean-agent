@@ -252,6 +252,441 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
         print(f"(croped) width: {width}, height: {height}, size: {width*height}")
 ```
 
+### PDF에서 이미지 추출
+
+Amazon S3에 이미지 파일이 업로드되면 아래와 같이 PyMuPDF를 이용해 처리합니다. Text는 chunking을 수행하고 이미지, Table은 이미지로 저장후 Multimodal을 이용해 이미지와 표의 내용을 해석하고 텍스트를 추출합니다.
+
+```python
+def load_document(file_type, key):
+    s3r = boto3.resource("s3")
+    doc = s3r.Object(s3_bucket, key)
+    
+    files = []
+    tables = []
+    contents = ""
+    subject_company = rating_date = ""
+    if file_type == 'pdf':
+        Byte_contents = doc.get()['Body'].read()
+
+        texts = []
+        nImages = []
+        try: 
+            # pdf reader            
+            reader = PdfReader(BytesIO(Byte_contents))
+            
+            # extract text
+            imgList = []
+            for i, page in enumerate(reader.pages):
+                
+                if i==0 and pdf_profile == 'ocean': # profile page
+                    print('skip the first page!')
+                    continue
+                    
+                texts.append(page.extract_text())
+                
+                nImage = 0
+                if '/Resources' in page:
+                    print(f"Resources[{i}]: {page['/Resources']}")
+                    if '/ProcSet' in page['/Resources']:
+                        print(f"Resources/ProcSet[{i}]: {page['/Resources']['/ProcSet']}")
+                    if '/XObject' in page['/Resources']:
+                        print(f"Resources/XObject[{i}]: {page['/Resources']['/XObject']}")                        
+                        for j, image in enumerate(page['/Resources']['/XObject']):
+                            print(f"image[{j}]: {image}")                                 
+                            if image in imgList:
+                                print('Duplicated...')
+                                continue    
+                            else:
+                                imgList.append(image)
+                                                    
+                            Im = page['/Resources']['/XObject'][image]
+                            print(f"{image}[{j}]: {Im}")                            
+                            nImage = nImage+1
+                            
+                print(f"# of images of page[{i}] = {nImage}")
+                nImages.append(nImage)
+                
+                # extract metadata
+                if pdf_profile == 'ocean' and i==1:
+                    print("---> extract metadata from document")
+                    pageText = page.extract_text()
+                    print('pageText: ', pageText)
+                    
+                    subject_company, rating_date_ori = get_profile_of_doc(pageText)
+                    print('subject_company: ', subject_company)
+                    
+                    from datetime import datetime
+                    d = datetime.strptime(rating_date_ori, '%d %B %Y')
+                    rating_date = str(d)[:10] 
+                    print('rating_date: ', rating_date)
+
+            contents = '\n'.join(texts)
+                        
+            pages = fitz.open(stream=Byte_contents, filetype='pdf')     
+
+            # extract table data
+            table_count = 0
+            for i, page in enumerate(pages):
+                page_tables = page.find_tables()
+                
+                if page_tables.tables:
+                    print('page_tables.tables: ', len(page_tables.tables))
+
+                    for tab in page_tables.tables:    
+                        if tab.row_count>=2:
+                            table_image = extract_table_image(page, i, table_count, tab.bbox, key, subject_company, rating_date)
+                            table_count += 1
+                        
+                            tables.append({
+                                "body": tab.to_markdown(),
+                                "page": str(i),
+                                "name": table_image
+                            })                    
+                            files.append(table_image)
+
+            # extract page images
+            if enablePageImageExraction=='true': 
+                for i, page in enumerate(pages):
+                    imgInfo = page.get_image_info()
+                    width = height = 0
+                    for j, info in enumerate(imgInfo):
+                        bbox = info['bbox']
+                        
+                    print(f"nImages[{i}]: {nImages[i]}")  # number of XObjects
+                    if nImages[i]>=4 or \
+                        (nImages[i]>=1 and (width==0 and height==0)) or \
+                        (nImages[i]>=1 and (width>=100 or height>=100)):
+                        pixmap = page.get_pixmap(dpi=200)  # dpi=300
+                        
+                        # convert to png
+                        img = Image.frombytes("RGB", [pixmap.width, pixmap.height], pixmap.samples)
+                        pixels = BytesIO()
+                        img.save(pixels, format='PNG')
+                        pixels.seek(0, 0)
+                                        
+                        # get path from key
+                        objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+                        folder = s3_prefix+'/captures/'+objectName+'/'
+                                
+                        fname = 'img_'+key.split('/')[-1].split('.')[0]+f"_{i}"
+                        print('fname: ', fname)          
+
+                        if pdf_profile == 'ocean':
+                            img_meta = {
+                                "ext": 'png',
+                                "page": str(i),
+                                "company": subject_company,
+                                "date": rating_date
+                            }
+                        else: 
+                            img_meta = {
+                                "ext": 'png',
+                                "page": str(i)
+                            }
+                        print('img_meta: ', img_meta)
+                               
+                        response = s3_client.put_object(
+                            Bucket=s3_bucket,
+                            Key=folder+fname+'.png',
+                            ContentType='image/png',
+                            Metadata = img_meta,
+                            Body=pixels
+                        )                                                        
+                        files.append(folder+fname+'.png')
+                                    
+                contents = '\n'.join(texts)
+                
+            elif enableImageExtraction == 'true':
+                image_files = extract_images_from_pdf(reader, key)
+                for img in image_files:
+                    files.append(img)
+        
+        except Exception:
+                err_msg = traceback.format_exc()
+                print('err_msg: ', err_msg)                     
+```
+
+pdf에 이미지 파일들이 있다면 pypdf를 이용하여 Amazon S3에 저장합니다.
+
+```python
+from pypdf import PdfReader   
+
+reader = PdfReader(BytesIO(Byte_contents))
+image_files = extract_images_from_pdf(reader, key)
+for img in image_files:
+    files.append(img)
+
+def extract_images_from_pdf(reader, key):
+    picture_count = 1
+    
+    extracted_image_files = []
+    print('pages: ', len(reader.pages))
+    for i, page in enumerate(reader.pages):        
+        for image_file_object in page.images:
+            img_name = image_file_object.name            
+            if img_name in extracted_image_files:
+                print('skip....')
+                continue
+            
+            extracted_image_files.append(img_name)
+            
+            ext = img_name.split('.')[-1]            
+            contentType = ""
+            if ext == 'png':
+                contentType = 'image/png'
+            elif ext == 'jpg' or ext == 'jpeg':
+                contentType = 'image/jpeg'
+            elif ext == 'gif':
+                contentType = 'image/gif'
+            elif ext == 'bmp':
+                contentType = 'image/bmp'
+            elif ext == 'tiff' or ext == 'tif':
+                contentType = 'image/tiff'
+            elif ext == 'svg':
+                contentType = 'image/svg+xml'
+            elif ext == 'webp':
+                contentType = 'image/webp'
+            elif ext == 'ico':
+                contentType = 'image/x-icon'
+            elif ext == 'eps':
+                contentType = 'image/eps'
+            
+            if contentType:                
+                image_bytes = image_file_object.data
+
+                pixels = BytesIO(image_bytes)
+                pixels.seek(0, 0)
+                            
+                # get path from key
+                objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+                folder = s3_prefix+'/files/'+objectName+'/'
+                            
+                img_key = folder+img_name
+                
+                response = s3_client.put_object(
+                    Bucket=s3_bucket,
+                    Key=img_key,
+                    ContentType=contentType,
+                    Body=pixels
+                )                            
+                picture_count += 1
+                    
+                extracted_image_files.append(img_key)
+
+    return extracted_image_files
+```
+
+읽어온 문서에서 추출된 텍스트와 테이블은 Document 타입으로 모으고 벡터저장소인 OpenSearch에 추가합니다.
+
+```python
+def store_document_for_opensearch(file_type, key):
+    contents, files, tables, subject_company, rating_date = load_document(file_type, key)
+    
+    if len(contents) == 0:
+        print('no contents: ', key)
+        return [], files
+    
+    print('length: ', len(contents))
+    
+    docs = []
+    
+    # text        
+    docs.append(Document(
+        page_content=contents,
+        metadata={
+            'name': key,
+            'url': path+parse.quote(key),
+            'subject_company': subject_company,
+            'rating_date': rating_date
+        }
+    ))
+        
+    # table
+    for table in tables:
+        docs.append(Document(
+            page_content=table['body'],
+            metadata={
+                'name': table['name'],
+                'url': path+parse.quote(table['name']),
+                'page': table['page'],
+                'subject_company': subject_company,
+                'rating_date': rating_date
+            }
+        ))  
+
+    ids = add_to_opensearch(docs, key)
+    
+    return ids, files
+```
+
+문서를 OpenSearch에 넣을때에는 아래와 같이 chunking을 수행합니다.
+
+```python
+def add_to_opensearch(docs, key):    
+    if len(docs) == 0:
+        return []    
+    
+    objectName = (key[key.find(s3_prefix)+len(s3_prefix)+1:len(key)])
+    print('objectName: ', objectName)    
+    metadata_key = meta_prefix+objectName+'.metadata.json'
+    print('meta file name: ', metadata_key)    
+    delete_document_if_exist(metadata_key)
+        
+    ids = []
+    if enalbeParentDocumentRetrival == 'true':
+        parent_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=2000,
+            chunk_overlap=100,
+            separators=["\n\n", "\n", ".", " ", ""],
+            length_function = len,
+        )
+        child_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=400,
+            chunk_overlap=50,
+            length_function = len,
+        )
+
+        parent_docs = parent_splitter.split_documents(docs)
+        
+        if len(parent_docs):
+            for i, doc in enumerate(parent_docs):
+                doc.metadata["doc_level"] = "parent"
+                    
+            try:        
+                parent_doc_ids = vectorstore.add_documents(parent_docs, bulk_size = 10000)                
+                child_docs = []
+                       
+                page = subject_company = rating_date = ""
+                for i, doc in enumerate(parent_docs):
+                    _id = parent_doc_ids[i]
+                    sub_docs = child_splitter.split_documents([doc])
+                    
+                    page = subject_company = rating_date = ""
+                    if "page" in doc.metadata:
+                        page = doc.metadata["page"]
+                    if "subject_company" in doc.metadata:
+                        subject_company = doc.metadata["subject_company"]
+                    if "rating_date" in doc.metadata:
+                        rating_date = doc.metadata["rating_date"]
+                    
+                    for _doc in sub_docs:
+                        _doc.metadata["parent_doc_id"] = _id
+                        _doc.metadata["doc_level"] = "child"
+                        _doc.metadata["page"] = page                        
+                        _doc.metadata["subject_company"] = subject_company
+                        _doc.metadata["rating_date"] = rating_date
+                        
+                    child_docs.extend(sub_docs)
+                print('child_docs: ', child_docs)
+                
+                child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 10000)
+                print('child_doc_ids: ', child_doc_ids) 
+                print('len(child_doc_ids): ', len(child_doc_ids))
+                    
+                ids = parent_doc_ids+child_doc_ids
+            except Exception:
+                err_msg = traceback.format_exc()
+                print('error message: ', err_msg)                
+    else:
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=100,
+            separators=["\n\n", "\n", ".", " ", ""],
+            length_function = len,
+        ) 
+        documents = text_splitter.split_documents(docs)
+            
+        try:        
+            ids = vectorstore.add_documents(documents, bulk_size = 10000)
+            print('response of adding documents: ', ids)
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)
+    
+    return ids
+```
+
+### 이미지에서 텍스트 추출
+
+이미지는 LLM에서 처리할 수 있도록 resize후에 텍스트를 추출합니다. 이때 LLM이 문서의 내용을 추출할 수 있도록 회사명등을 이용해 정보를 제공합니다.
+
+```python
+def store_image_for_opensearch(key, page, subject_company, rating_date):
+    image_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
+                        
+    image_content = image_obj['Body'].read()
+    img = Image.open(BytesIO(image_content))
+                        
+    width, height = img.size     
+    pos = key.rfind('/')
+    prefix = key[pos+1:pos+5]
+    print('img_prefix: ', prefix)    
+    if pdf_profile=='ocean' and prefix == "img_":
+        area = (0, 175, width, height-175)
+        img = img.crop(area)
+            
+        width, height = img.size 
+        print(f"(croped) width: {width}, height: {height}, size: {width*height}")
+                
+    if width < 100 or height < 100:  # skip small size image
+        return []
+                
+    isResized = False
+    while(width*height > 5242880):
+        width = int(width/2)
+        height = int(height/2)
+        isResized = True
+        print(f"(resized) width: {width}, height: {height}, size: {width*height}")
+           
+    try:             
+        if isResized:
+            img = img.resize((width, height))
+                             
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+                                                                        
+        # extract text from the image
+        chat = get_multimodal()
+        text = extract_text(chat, img_base64, subject_company)
+        extracted_text = text[text.find('<result>')+8:len(text)-9] # remove <result> tag
+        
+        summary = summary_image(chat, img_base64, subject_company)
+        image_summary = summary[summary.find('<result>')+8:len(summary)-9] # remove <result> tag
+        
+        if len(extracted_text) > 30:
+            contents = f"[이미지 요약]\n{image_summary}\n\n[추출된 텍스트]\n{extracted_text}"
+        else:
+            contents = f"[이미지 요약]\n{image_summary}"
+        print('image contents: ', contents)
+
+        docs = []        
+        if len(contents) > 30:
+            docs.append(
+                Document(
+                    page_content=contents,
+                    metadata={
+                        'name': key,
+                        'url': path+parse.quote(key),
+                        'page': page,
+                        'subject_company': subject_company,
+                        'rating_date': rating_date
+                    }
+                )
+            )         
+        print('docs size: ', len(docs))
+        
+        return add_to_opensearch(docs, key)
+    
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        
+        return []
+```
+
+
+
 ### 문서 생성
 
 문서의 목차와 이에 따른 작성과정은 [plan and execute 패턴](https://github.com/kyopark2014/writing-agent)을 이용합니다. 이 패턴은 이전 작성된 문서를 참고할 수 있어서 문장의 중복 및 자연스러운 연결을 위해 유용합니다. 문서의 검색과 생성은 workflow를 이용해 구성합니다.
