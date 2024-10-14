@@ -844,8 +844,8 @@ def load_document(file_type, key):
             for i, page in enumerate(reader.pages):
                 print(f"page[{i}]: {page}")
                 
-                if i<=1 and pdf_profile == 'ocean': # profile page
-                    print('skip the first 2 page!')
+                if i==0 and pdf_profile == 'ocean': # profile page
+                    print('skip the first page!')
                     continue
                     
                 texts.append(page.extract_text())
