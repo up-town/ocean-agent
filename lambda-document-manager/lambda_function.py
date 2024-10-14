@@ -476,9 +476,9 @@ def add_to_opensearch(docs, key):
                 for i, doc in enumerate(parent_docs):
                     _id = parent_doc_ids[i]
                     sub_docs = child_splitter.split_documents([doc])
-                    print(f"sub_docs[{i}]: {sub_docs}")
                     
-                    page = subject_company = rating_date = ""
+                    rating_date = "2024-10-14"
+                    page = subject_company = ""
                     if "page" in doc.metadata:
                         page = doc.metadata["page"]
                     if "subject_company" in doc.metadata:
@@ -494,7 +494,7 @@ def add_to_opensearch(docs, key):
                         if subject_company:
                             _doc.metadata["subject_company"] = subject_company
                         #if rating_date:
-                        #    _doc.metadata["rating_date"] = rating_date
+                        _doc.metadata["rating_date"] = rating_date
                         
                     child_docs.extend(sub_docs)
                 print('child_docs: ', child_docs)
