@@ -37,13 +37,13 @@ chmod a+rx resize.sh && ./resize.sh 80
 4) 소스를 다운로드합니다.
 
 ```java
-git clone https://github.com/kyopark2014/writing-agent
+git clone https://github.com/kyopark2014/ocean-agent
 ```
 
 5) cdk 폴더로 이동하여 필요한 라이브러리를 설치합니다.
 
 ```java
-cd writing-agent/cdk-writing-agent/ && npm install
+cd ocean-agent/cdk-ocean-agent/ && npm install
 ```
 
 7) CDK 사용을 위해 Boostraping을 수행합니다.
