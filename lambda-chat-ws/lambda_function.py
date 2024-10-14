@@ -1704,7 +1704,6 @@ class State(TypedDict):
     subject_company: str
     rating_date: str    
     planning_steps: List[str]
-    sub_quries: List[List[str]]
     relevant_contexts : list[str]
     drafts : List[str]
     
@@ -1872,7 +1871,33 @@ def parallel_retriever(state: State):
     
     relevant_contexts = []    
     
-    sub_quries = state["sub_quries"]
+    sub_quries = [
+        {
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        },
+        {
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        },
+        {
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        },
+        {
+            "fleet"
+        },
+        {
+            "rating", #"infospectrum level"
+            "assessment" # overall assessment"
+        }        
+    ]
     
     for i, step in enumerate(planning_steps):
         print(f"{i}: {step}")
@@ -2019,34 +2044,6 @@ def run_agent_ocean(connectionId, requestId, query):
         "5. 종합 평가"
     ]
     
-    sub_quries = [
-        [
-            "establish", 
-            "location", 
-            "management", 
-            "affiliated"
-        ],
-        [
-            "cargo", 
-            "route", 
-            "owned/chartered", 
-            "strategy"
-        ],
-        [
-            "financial performance", 
-            "route", 
-            "financial risk",
-            "payment"
-        ],
-        [
-            "fleet"
-        ],
-        [
-            "rating", #"infospectrum level"
-            "assessment" # overall assessment"
-        ]        
-    ]
-    
     subject_company = query
     
     isTyping(connectionId, requestId, "")
@@ -2055,7 +2052,6 @@ def run_agent_ocean(connectionId, requestId, query):
     # Run the workflow
     inputs = {
         "subject_company": subject_company,
-        "sub_quries": sub_quries,
         "planning_steps": planning_steps
     }
     config = {
