@@ -5,6 +5,9 @@
     <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-green">
 </p>
 
+여기에서는 기업의 정보를 PDF 문서로 받아서 원하는 목차로 정리하는 업무지원 프로세스에 대해 설명합니다. PDF 문서를 활용하기 위해서는 문서의 주제와 생성일에 대한 정보를 추출해 문서 chunk의 metadata로 등록하는 절차가 필요합니다. 또한 이때의 메타정보를 기준으로 문서를 검색하기 위해서는 RAG의 지식저장소가 필요합니다. 그리고 얻어진 문서의 내용을 사용자가 원하는 포맷으로 보여줄수 있도록 markdown로 정리하고 html로 공유할 수 있어야 합니다. 여기서는 PDF에서 정보의 추출 및 메타정보로 등록, RAG를 이용한 문서의 검색, markdown형태로 문서를 공유하는 일련의 과정을 설명합니다.
+
+
 ## OpenSearch를 이용한 RAG의 구현
 
 LangChain의 [OpenSearchVectorSearch](https://api.python.langchain.com/en/latest/vectorstores/langchain_community.vectorstores.opensearch_vector_search.OpenSearchVectorSearch.html)을 이용하여 지식저장소인 Amazon OpenSearch와 연결합니다. 이후 계층적 chunking을 이용하여 관련된 문서를 조회합니다. 
@@ -248,6 +251,226 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
         width, height = img.size 
         print(f"(croped) width: {width}, height: {height}, size: {width*height}")
 ```
+
+### 문서 생성
+
+문서의 목차와 이에 따른 작성과정은 [plan and execute 패턴](https://github.com/kyopark2014/writing-agent)을 이용합니다. 이 패턴은 이전 작성된 문서를 참고할 수 있어서 문장의 중복 및 자연스러운 연결을 위해 유용합니다. 문서의 검색과 생성은 workflow를 이용해 구성합니다.
+
+```python
+def buildWorkflow():
+    workflow = StateGraph(State)
+    workflow.add_node("retrieve", parallel_retriever)
+        
+    workflow.add_node("generate", generate_node)
+    
+    workflow.add_edge(START, "retrieve")
+    
+    workflow.add_edge("retrieve", "generate")
+    workflow.add_edge("generate", END)
+    
+    return workflow.compile()
+```
+
+검색은 parallel_retriever를 이용합니다.
+
+```python
+def parallel_retriever(state: State):
+    print('###### parallel_retriever ######')
+    subject_company = state["subject_company"]    
+    planning_steps = state["planning_steps"]
+    print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
+    
+    relevant_contexts = []    
+    
+    sub_quries = state["sub_quries"]
+    
+    for i, step in enumerate(planning_steps):
+        print(f"{i}: {step}")
+
+        context = ""        
+        for q in sub_quries[i]:
+            docs = retrieve(q, subject_company)
+            
+            print(f"---> q: {sub_quries[i]}, docs: {docs}")
+            
+            for doc in docs:            
+                context += doc.page_content
+            
+        relevant_contexts.append(context)
+        
+    return {
+        "subject_company": subject_company,
+        "planning_steps": planning_steps,
+        "relevant_contexts": relevant_contexts
+    }
+```
+
+이때 RAG 검색은 아래와 같습니다.
+
+```python
+def retrieve(query: str, subject_company: str):
+    print(f'###### retrieve: {query} ######')
+    global reference_docs
+    
+    top_k = 4
+    docs = []
+    
+    bedrock_embedding = get_embedding()
+       
+    vectorstore_opensearch = OpenSearchVectorSearch(
+        index_name = index_name,
+        is_aoss = False,
+        ef_search = 1024, # 512(default)
+        m=48,
+        #engine="faiss",  # default: nmslib
+        embedding_function = bedrock_embedding,
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+    )  
+    
+    if enalbeParentDocumentRetrival == 'true': # parent/child chunking
+        relevant_documents = get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company)
+                        
+        for i, document in enumerate(relevant_documents):
+            parent_doc_id = document[0].metadata['parent_doc_id']
+            doc_level = document[0].metadata['doc_level']
+
+            excerpt, name, url = get_parent_content(parent_doc_id) # use pareant document
+            
+            docs.append(
+                Document(
+                    page_content=excerpt,
+                    metadata={
+                        'name': name,
+                        'url': url,
+                        'doc_level': doc_level,
+                        'from': 'vector'
+                    },
+                )
+            )
+    else: 
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+            query = query,
+            k = top_k,  
+            pre_filter={
+                "doc_level": {"$eq": "child"},
+                "subject_company": {"$eq": subject_company}
+            }
+        )
+    
+        for i, document in enumerate(relevant_documents):
+            name = document[0].metadata['name']
+            url = document[0].metadata['url']
+            content = document[0].page_content
+                   
+            docs.append(
+                Document(
+                    page_content=content,
+                    metadata={
+                        'name': name,
+                        'url': url,
+                        'from': 'vector'
+                    },
+                )
+            )
+    
+    filtered_docs = grade_documents(query, docs) # grading
+    
+    filtered_docs = check_duplication(filtered_docs) # check duplication
+            
+    reference_docs += filtered_docs # add to reference
+    
+    return filtered_docs
+```
+
+문서의 생성은 아래와 같이 주제에 대한 보고서 지시사항, 보고서 단계, 이미 작성한 텍스트, 참고 문서를 활용해 생성합니다. 
+
+```python
+def generate_node(state: State):    
+    print('###### generate_node ######')
+    write_template = (
+        "당신은 기업에 대한 보고서를 작성하는 훌륭한 글쓰기 도우미입니다."
+        "아래와 같이 원본 보고서 지시사항과 계획한 보고서 단계를 제공하겠습니다."
+        "또한 제가 이미 작성한 텍스트를 제공합니다."
+        
+        "보고서 지시사항:"
+        "<instruction>"
+        "{instruction}"
+        "</instruction>"
+        
+        "보고서 단계:"
+        "<plan>"
+        "{plan}"
+        "</plan>"
+        
+        "이미 작성한 텍스트:"
+        "<text>"
+        "{text}"
+        "</text>"
+        
+        "참고 문서"
+        "<context>"        
+        "{context}"
+        "</context>"        
+        
+        "보고서 지시 사항, 보고서 단계, 이미 작성된 텍스트, 참고 문서를 참조하여 다음 단계을 계속 작성합니다."
+        "기업에 대한 구체적인 정보는 받드시 참고 문서를 이용해 작성하고, 모르는 부분은 포함하지 않습니다."
+        
+        "다음 단계:"
+        "<step>"
+        "{STEP}"
+        "</step>"
+                
+        "보고서의 내용이 끊어지지 않고 잘 이해되도록 하나의 문단을 충분히 길게 작성합니다."
+        "필요하다면 앞에 작은 부제를 추가할 수 있습니다."
+        "이미 작성된 텍스트를 반복하지 말고 작성한 문단만 출력하세요."                
+        "Markdown 포맷으로 서식을 작성하세요."
+        "최종 결과에 <result> tag를 붙여주세요."
+    )
+    
+    write_prompt = ChatPromptTemplate.from_messages([
+        ("human", write_template)
+    ])
+    
+    instruction = f"{state['subject_company']} 회사에 대해 소개해 주세요."
+    planning_steps = state["planning_steps"]
+    text = ""
+    drafts = []
+    
+    for i, step in enumerate(planning_steps):
+        context = state["relevant_contexts"][i]
+        
+        chat = get_chat()                       
+        write_chain = write_prompt | chat            
+        try: 
+            result = write_chain.invoke({
+                "instruction": instruction,
+                "plan": planning_steps,
+                "text": text,
+                "context": context,
+                "STEP": step
+            })
+
+            output = result.content
+            draft = output[output.find('<result>')+8:len(output)-9] # remove <result> tag    
+                
+            if draft.find('#')!=-1 and draft.find('#')!=0:
+                draft = draft[draft.find('#'):]
+                    
+            text += draft + '\n\n'
+            drafts.append(draft)
+                
+        except Exception:
+            err_msg = traceback.format_exc()
+            print('error message: ', err_msg)                        
+            raise Exception ("Not able to request to LLM")
+
+    return {
+        "drafts": drafts
+    }
+```
+
+
 
 ## 직접 실습 해보기
 
