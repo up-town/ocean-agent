@@ -284,7 +284,10 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
     width, height = img.size 
     print(f"(original) width: {width}, height: {height}, size: {width*height}")
     
-    if pdf_profile=='ocean':
+    pos = key.find('/')
+    prefix = key[pos+1:pos+4]
+    print('img_prefix: ', prefix)    
+    if pdf_profile=='ocean' and prefix == "img_":
         area = (0, 175, width, height-175)
         cropped_img = img.crop(area)
             
