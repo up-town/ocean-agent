@@ -1716,7 +1716,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         if "rating_date" in re[0].metadata:
             meta_rating_date = re[0].metadata['rating_date']
         print(f"--> (metadata) parent_doc_id: {parent_doc_id}, doc_level: {doc_level}, subject_company: {meta_subject_company}, rating_date: {meta_rating_date}")
-            
+             
         if parent_doc_id and doc_level=='child' and meta_subject_company==subject_company:
             if parent_doc_id in docList:
                 print('duplicated!')
