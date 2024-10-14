@@ -1832,7 +1832,6 @@ def parallel_retriever(state: State):
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
-    
     relevant_contexts = []    
     
     sub_quries = [
@@ -1932,6 +1931,8 @@ def generate_node(state: State):
     
     instruction = f"{state['subject_company']} 회사에 대해 소개해 주세요."
     planning_steps = state["planning_steps"]
+    print(f"planning_steps: {planning_steps}")
+    
     text = ""
     drafts = []
     
@@ -2016,6 +2017,7 @@ def run_agent_ocean(connectionId, requestId, query):
     isTyping(connectionId, requestId, "")
     app = buildWorkflow()
         
+    print('planning_steps', planning_steps)
     # Run the workflow
     inputs = {
         "subject_company": subject_company,
