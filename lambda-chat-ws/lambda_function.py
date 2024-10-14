@@ -903,14 +903,14 @@ def get_references(docs):
             else:
                 reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
         else:
-            urlList = []
-            if url in urlList:
-                print('duplicated url')
+            nameList = []
+            if name in nameList:
+                print('duplicated!')
                 continue
             else:
                 #reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>, {sourceType}\n"
                 reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>\n"
-                urlList.append(url)
+                nameList.append(name)
             
     return reference
 
@@ -937,10 +937,10 @@ def get_references_for_html(docs):
         
         nameList = []
         if name in nameList:
-            print('duplicated url')
+            print('duplicated!')
             continue
         else:
-            reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a>\n\n"
+            reference = reference + f"{i+1}. <a href={url} target=_blank>{name}</a><br><br>"
             nameList.append(name)
             
     return reference
@@ -1700,6 +1700,7 @@ class State(TypedDict):
     subject_company: str
     rating_date: str    
     planning_steps: List[str]
+    sub_quries: List[List[str]]
     relevant_contexts : list[str]
     drafts : List[str]
     
@@ -1867,33 +1868,7 @@ def parallel_retriever(state: State):
     
     relevant_contexts = []    
     
-    sub_quries = [
-        {
-            "establish", 
-            "location", 
-            "management", 
-            "affiliated"
-        },
-        {
-            "cargo", 
-            "route", 
-            "owned/chartered", 
-            "strategy"
-        },
-        {
-            "financial performance", 
-            "route", 
-            "financial risk",
-            "payment"
-        },
-        {
-            "fleet"
-        },
-        {
-            "rating", #"infospectrum level"
-            "assessment" # overall assessment"
-        }        
-    ]
+    sub_quries = state["sub_quries"]
     
     for i, step in enumerate(planning_steps):
         print(f"{i}: {step}")
@@ -2040,6 +2015,34 @@ def run_agent_ocean(connectionId, requestId, query):
         "5. 종합 평가"
     }
     
+    sub_quries = [
+        [
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        ],
+        [
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        ],
+        [
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        ],
+        [
+            "fleet"
+        ],
+        [
+            "rating", #"infospectrum level"
+            "assessment" # overall assessment"
+        ]        
+    ]
+    
     subject_company = query
     
     isTyping(connectionId, requestId, "")
@@ -2048,6 +2051,7 @@ def run_agent_ocean(connectionId, requestId, query):
     # Run the workflow
     inputs = {
         "subject_company": subject_company,
+        "sub_quries": sub_quries,
         "planning_steps": planning_steps
     }
     config = {
