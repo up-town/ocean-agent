@@ -311,7 +311,7 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         img_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-                                                                
+                                                                        
         # extract text from the image
         chat = get_multimodal()
         text = extract_text(chat, img_base64, subject_company)
@@ -1108,8 +1108,9 @@ def get_parameter(model_type):
         }
         
 def extract_text(chat, img_base64, subject_company):
+    print('subject_company: ', subject_company)
     if subject_company:
-        query = f"이 이미지는 {subject_company}에 대한 정보를 포함하고 있습니다. 텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
+        query = f"이 이미지는 {subject_company} 회사의 정보입니다. 텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
     else:
         query = query = "텍스트를 추출해서 utf8로 변환하세요. <result> tag를 붙여주세요."
     
@@ -1141,9 +1142,10 @@ def extract_text(chat, img_base64, subject_company):
     
     return extracted_text
 
-def summary_image(chat, img_base64, subject_company):    
+def summary_image(chat, img_base64, subject_company):  
+    print('subject_company: ', subject_company)  
     if subject_company:
-        query = f"이 이미지는 {subject_company}에 대한 정보를 포함하고 있습니다. 이미지가 의미하는 내용을 풀어서 자세히 알려주세요. <result> tag를 붙여주세요."
+        query = f"이 이미지는 {subject_company} 회사의 정보입니다. 이미지가 의미하는 내용을 풀어서 자세히 알려주세요. <result> tag를 붙여주세요."
     else:
         query = "이미지가 의미하는 내용을 풀어서 자세히 알려주세요. <result> tag를 붙여주세요."
     
