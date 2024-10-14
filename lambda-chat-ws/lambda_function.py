@@ -2026,11 +2026,11 @@ def run_agent_ocean(connectionId, requestId, query):
     }
 
     output = app.invoke(inputs, config)   
-    print('output: ', output)
+    # print('output: ', output)
     
     drafts = output['drafts']
     for i, draft in enumerate(drafts):
-        print(f"{i}: {drafts[i]}")
+        print(f"{i}: {draft}")
 
     final_doc = output['final_doc']
     
