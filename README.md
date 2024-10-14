@@ -189,6 +189,8 @@ def call_model(state: State):
 
 ## 문서 전처리
 
+### Metadata 추출 
+
 특정 페이지의 표에는 "Subject company"와 "Rating date"로 해당 문서의 대상과 생성일을 확인할 수 있습니다.
 
 <img width="830" alt="image" src="https://github.com/user-attachments/assets/3ef0a261-678e-4af2-b58f-8c0eb9d442ec">
@@ -218,6 +220,33 @@ def get_profile_of_doc(content: str):
             rating_date = parsed_info.rating_date                            
             break
     return subject_company, rating_date        
+```
+
+### 이미지의 Header / Footer 제거
+
+[lambda-document-manager - lambda_function.py](./lambda-document-manager/lambda_function.py)에서는 pdf_profile을 참조하여 이미지에서 텍스트 추출시에 header와 footer를 제거합니다. header와 footer의 위치는 pdf에 맞게 조정합니다.
+
+```python
+pdf_profile = 'ocean'
+
+def store_image_for_opensearch(key, page, subject_company, rating_date):
+    image_obj = s3_client.get_object(Bucket=s3_bucket, Key=key)
+                        
+    image_content = image_obj['Body'].read()
+    img = Image.open(BytesIO(image_content))
+                        
+    width, height = img.size 
+    print(f"(original) width: {width}, height: {height}, size: {width*height}")
+    
+    pos = key.rfind('/')
+    prefix = key[pos+1:pos+5]
+    print('img_prefix: ', prefix)    
+    if pdf_profile=='ocean' and prefix == "img_":
+        area = (0, 175, width, height-175)
+        img = img.crop(area)
+            
+        width, height = img.size 
+        print(f"(croped) width: {width}, height: {height}, size: {width*height}")
 ```
 
 ## 직접 실습 해보기
