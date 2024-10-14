@@ -889,9 +889,10 @@ def load_document(file_type, key):
                 # extract metadata
                 if pdf_profile == 'ocean' and i==1:
                     print("---> extract metadata from document")
-                    print('content: ', texts[i])
+                    pageText = page.extract_text()
+                    print('pageText: ', pageText)
                     
-                    subject_company, rating_date_ori = get_profile_of_doc(texts[i])
+                    subject_company, rating_date_ori = get_profile_of_doc(pageText)
                     print('subject_company: ', subject_company)
                     
                     from datetime import datetime
