@@ -489,8 +489,11 @@ def add_to_opensearch(docs, key):
                         _doc.metadata["parent_doc_id"] = _id
                         _doc.metadata["doc_level"] = "child"
                         _doc.metadata["page"] = page
-                        _doc.metadata["subject_company"] = subject_company
-                        _doc.metadata["rating_date"] = rating_date
+                        
+                        if subject_company:
+                            _doc.metadata["subject_company"] = subject_company
+                        if rating_date:
+                            _doc.metadata["rating_date"] = rating_date
                         
                     child_docs.extend(sub_docs)
                 print('child_docs: ', child_docs)
