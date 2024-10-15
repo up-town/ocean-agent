@@ -717,16 +717,16 @@ def parallel_retriever(state: State):
     
     relevant_contexts = []    
     
-    sub_quries = state["sub_quries"]
+    sub_queries = state["sub_queries"]
     
     for i, step in enumerate(planning_steps):
         print(f"{i}: {step}")
 
         context = ""        
-        for q in sub_quries[i]:
+        for q in sub_queries[i]:
             docs = retrieve(q, subject_company)
             
-            print(f"---> q: {sub_quries[i]}, docs: {docs}")
+            print(f"---> q: {sub_queries[i]}, docs: {docs}")
             
             for doc in docs:            
                 context += doc.page_content
