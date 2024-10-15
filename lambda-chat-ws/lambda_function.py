@@ -2401,9 +2401,10 @@ def buildReflection():
         
     return workflow.compile()
 
-def reflect_draft(conn, reflection_app, idx, draft):     
+def reflect_draft(conn, reflection_app, idx, draft, subject_company):     
     inputs = {
-        "draft": draft
+        "draft": draft,
+        "subject_company": subject_company
     }    
     config = {
         "recursion_limit": 50,
@@ -2419,7 +2420,7 @@ def reflect_draft(conn, reflection_app, idx, draft):
     conn.send(result)    
     conn.close()
 
-def reflect_drafts_using_parallel_processing(drafts):
+def reflect_drafts_using_parallel_processing(drafts, subject_company):
     revised_drafts = drafts
         
     processes = []
@@ -2431,7 +2432,7 @@ def reflect_drafts_using_parallel_processing(drafts):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        process = Process(target=reflect_draft, args=(child_conn, reflection_app, idx, draft))
+        process = Process(target=reflect_draft, args=(child_conn, reflection_app, idx, draft, subject_company))
         processes.append(process)
             
     for process in processes:
@@ -2458,7 +2459,7 @@ def revise_answers(state: State):
     
     # reflection
     if multi_region == 'enable':  # parallel processing
-        revised_drafts = reflect_drafts_using_parallel_processing(drafts)
+        revised_drafts = reflect_drafts_using_parallel_processing(drafts, subject_company)
     else:
         revised_drafts = []
         reflection_app = buildReflection()
