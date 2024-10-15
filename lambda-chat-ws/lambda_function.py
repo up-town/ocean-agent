@@ -2195,7 +2195,8 @@ def reflect_node(state: ReflectionState):
                     if isKorean(q):
                         search = traslation(chat, q, "Korean", "English")
                     else:
-                        search = traslation(chat, q, "English", "Korean")
+                        continue
+                        # search = traslation(chat, q, "English", "Korean")
                     translated_search.append(search)
                         
                 print('translated_search: ', translated_search)
