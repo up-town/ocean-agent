@@ -2442,7 +2442,8 @@ def buildReflection():
 def reflect_draft(conn, reflection_app, idx, draft, subject_company):     
     inputs = {
         "draft": draft,
-        "subject_company": subject_company
+        "subject_company": subject_company,
+        "revision_number": 0
     }    
     config = {
         "recursion_limit": 50,
