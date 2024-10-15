@@ -2409,7 +2409,7 @@ MAX_REVISIONS = 1
 def should_continue(state: ReflectionState, config):
     print("###### should_continue ######")
     max_revisions = config.get("configurable", {}).get("max_revisions", MAX_REVISIONS)
-    print("max_revisions: ", max_revisions)
+    print(f"revision_number: {state["revision_number"]}, max_revisions: {max_revisions}")
             
     if state["revision_number"] > max_revisions:
         return "end"
