@@ -2127,6 +2127,7 @@ def run_agent_ocean(connectionId, requestId, query):
 # Workflow - Reflection
 class ReflectionState(TypedDict):
     draft : str
+    subject_company: str
     reflection : List[str]
     search_queries : List[str]
     revised_draft: str
@@ -2310,6 +2311,7 @@ def revise_draft(state: ReflectionState):
         
     # RAG - knowledge base
     subject_company = state['subject_company']
+    print('subject_company: ', subject_company)
     for q in search_queries:
         filtered_docs += retrieve(q, subject_company)
         print(f'q: {q}, filtered_docs: {filtered_docs}')
@@ -2444,20 +2446,22 @@ def reflect_drafts_using_parallel_processing(drafts):
 
 def revise_answers(state: State):
     print("###### revise_answers ######")
-    drafts = state["drafts"]        
+    drafts = state["drafts"]
     print('drafts: ', drafts)
-        
-    # reflection    
+    subject_company = state['subject_company']
+    print('subject_company: ', subject_company)
+    
+    # reflection
     if multi_region == 'enable':  # parallel processing
         revised_drafts = reflect_drafts_using_parallel_processing(drafts)
     else:
         revised_drafts = []
         reflection_app = buildReflection()
                 
-        final_doc = ""   
         for idx, draft in enumerate(drafts):
             inputs = {
-                "draft": draft
+                "draft": draft,
+                "subject_company": subject_company
             }    
             config = {
                 "recursion_limit": 50,
