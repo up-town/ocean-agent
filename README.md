@@ -696,17 +696,48 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
 Plan and execute 패턴은 이전 작성된 문서를 참고할 수 있어서 문장의 중복 및 자연스러운 연결을 위해 유용합니다. 문서의 검색과 생성은 workflow를 이용해 구성합니다. 
 
 ```python
-def buildWorkflow():
+def buildPlanAndExecuteOceanWorkflow():
     workflow = StateGraph(State)
-    workflow.add_node("retrieve", parallel_retriever)
-        
+
+    # Add nodes
+    workflow.add_node("plan", plan_node)
+    workflow.add_node("retrieve", retrieve_node)        
     workflow.add_node("generate", generate_node)
-    
-    workflow.add_edge(START, "retrieve")
-    
+    workflow.add_node("revise_answers", revise_answers)  # reflection
+
+    # Add edges
+    workflow.add_edge(START, "plan")
+    workflow.add_edge("plan", "retrieve")
     workflow.add_edge("retrieve", "generate")
-    workflow.add_edge("generate", END)
+    workflow.add_edge("generate", "revise_answers")
+    workflow.add_edge("revise_answers", END)
     
+    return workflow.compile()
+```
+
+이때 reflection 패턴의 workflow는 아래와 같습니다.
+
+```python
+def buildReflection():
+    workflow = StateGraph(ReflectionState)
+
+    # Add nodes
+    workflow.add_node("reflect_node", reflect_node)
+    workflow.add_node("revise_draft", revise_draft)
+
+    # Set entry point
+    workflow.set_entry_point("reflect_node")        
+    workflow.add_conditional_edges(
+        "revise_draft", 
+        should_continue, 
+        {
+            "end": END, 
+            "continue": "reflect_node"}
+    )
+
+    # Add edges
+    workflow.add_edge("reflect_node", "revise_draft")
+        
     return workflow.compile()
 ```
 
