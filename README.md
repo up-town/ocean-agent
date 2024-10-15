@@ -7,6 +7,10 @@
 
 여기에서는 기업의 정보를 PDF 문서로 받아서 원하는 목차로 정리하는 업무지원 프로세스에 대해 설명합니다. PDF 문서를 활용하기 위해서는 문서의 주제와 생성일에 대한 정보를 추출해 문서 chunk의 metadata로 등록하는 절차가 필요합니다. 또한 이때의 메타정보를 기준으로 문서를 검색하기 위해서는 RAG의 지식저장소가 필요합니다. 그리고 얻어진 문서의 내용을 사용자가 원하는 포맷으로 보여줄수 있도록 markdown로 정리하고 html로 공유할 수 있어야 합니다. 여기서는 PDF에서 정보의 추출 및 메타정보로 등록, RAG를 이용한 문서의 검색, markdown형태로 문서를 공유하는 일련의 과정을 설명합니다.
 
+기업 정보 요약을 위한 인프라는 Amazon serverless architecture 패턴을 따라 아래와 같이 설계되었습니다. 이러한 architecture는 변화하는 트래픽에 적절히 대응하고 비용을 최적화할 수 있습니다. 또한 AWS CDK를 이용해 편리하게 배포할 수 있습니다. 
+
+![image](https://github.com/user-attachments/assets/743759bb-167a-4f0a-8fbb-6878f167bffe)
+
 
 ## OpenSearch를 이용한 RAG의 구현
 
