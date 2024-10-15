@@ -988,9 +988,14 @@ def generate_node(state: State):
 
 ### 기업 보고서 작성
 
-메뉴에서 "Ocean Agent"를 선택한 후에 "Suzano SA"로 회사의 이름만을 입력합니다. 미리보기 링크를 누르면 html로 문서 내용을 공유 할 수 있습니다. 다운로드 링크를 누르면 markdown 형태로 파일을 다운로드 해서 github 또는 메일로 공유할 수 있습니다. [Markdown 문서의 예](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Suzano%20SA.md)는 편의에 따라 pdf등의 문서로 변환할 수 있습니다.
+메뉴에서 "Ocean Agent"를 선택하면, plan-and-execute로 답변을 구할 수 있습니다. 입력창에서 "Suzano SA"로 회사의 이름만을 입력합니다. 아래 결과처럼 미리보기 링크를 누르면 html로 문서 내용을 공유 할 수 있습니다. 다운로드 링크를 누르면 markdown 형태로 파일을 다운로드 해서 github 또는 메일로 공유할 수 있습니다. [Markdown 문서의 예](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Suzano%20SA.md)는 편의에 따라 pdf등의 문서로 변환할 수 있습니다.
 
 <img src="./contents/Suzano_SA.png" width="700">
+
+메뉴에서 "Ocean Agent (Reflection)"을 선택하고 "Suzano SA"을 입력하면 plan and execute와 reflection이 적용된 결과를 아래 링크와 같이 얻을 수 있습니다. plan and execute를 적용했을 때보다 더 자세하고 많은 정보를 얻을 수 있지만, reflection을 위해 더 많은 token과 수행 시간을 필요로 합니다.
+
+[Suzano SA_reflection.md](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Suzano%20SA_reflection.md)
+
 
 ## 결론
 
