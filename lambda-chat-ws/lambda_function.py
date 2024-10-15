@@ -1704,7 +1704,7 @@ class State(TypedDict):
     subject_company: str
     rating_date: str    
     planning_steps: List[str]
-    sub_quries: List[List[str]]
+    sub_queries: List[List[str]]
     relevant_contexts : list[str]
     drafts : List[str]
     revised_drafts: Annotated[list, operator.add]  # for reflection
@@ -1865,29 +1865,66 @@ def retrieve(query: str, subject_company: str):
     
     return filtered_docs
 
+def parallel_retrieve(conn, q, subject_company):
+    context = ""    
+    
+    docs = retrieve(q, subject_company)                
+    print(f"---> q: {q}, docs: {docs}")
+                    
+    for doc in docs:
+        context += doc.page_content
+    
+    conn.send(context)    
+    conn.close()
+
+def retrieve_for_parallel_processing(sub_queries, subject_company):
+    processes = []
+    parent_connections = []
+        
+    contents = "" 
+    for idx, q in enumerate(sub_queries):
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        process = Process(target=parallel_retrieve, args=(child_conn, q, subject_company))
+        processes.append(process)
+            
+    for process in processes:
+        process.start()
+                
+    for parent_conn in parent_connections:
+        content = parent_conn.recv()
+        
+        contents += content
+
+    for process in processes:
+        process.join()
+          
+    return contents 
+
 def parallel_retriever(state: State):
     print('###### parallel_retriever ######')
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
     
-    relevant_contexts = []    
-    
-    sub_quries = state["sub_quries"]
+    relevant_contexts = []        
+    sub_queries = state["sub_queries"]
     
     for i, step in enumerate(planning_steps):
         print(f"{i}: {step}")
-
-        context = ""        
-        for q in sub_quries[i]:
-            docs = retrieve(q, subject_company)
-            
-            print(f"---> q: {sub_quries[i]}, docs: {docs}")
-            
-            for doc in docs:            
-                context += doc.page_content
-            
-        relevant_contexts.append(context)
+        if multi_region == 'enable': 
+            contents = retrieve_for_parallel_processing(sub_queries[i], subject_company)
+        else:
+            contents = ""        
+            for q in sub_queries[i]:
+                docs = retrieve(q, subject_company)
+                
+                print(f"---> q: {sub_queries[i]}, docs: {docs}")                
+                for doc in docs:            
+                    contents += doc.page_content
+                
+        relevant_contexts.append(contents)
         
     return {
         "subject_company": subject_company,
@@ -2070,7 +2107,7 @@ def run_agent_ocean(connectionId, requestId, query):
         "5. 종합 평가"
     ]
     
-    sub_quries = [
+    sub_queries = [
         [
             "establish", 
             "location", 
@@ -2106,7 +2143,7 @@ def run_agent_ocean(connectionId, requestId, query):
     # Run the workflow
     inputs = {
         "subject_company": subject_company,
-        "sub_quries": sub_quries,
+        "sub_queries": sub_queries,
         "planning_steps": planning_steps
     }
     config = {
@@ -2504,7 +2541,7 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
         "5. 종합 평가"
     ]
     
-    sub_quries = [
+    sub_queries = [
         [
             "establish", 
             "location", 
@@ -2540,7 +2577,7 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
     # Run the workflow
     inputs = {
         "subject_company": subject_company,
-        "sub_quries": sub_quries,
+        "sub_queries": sub_queries,
         "planning_steps": planning_steps
     }
     config = {
