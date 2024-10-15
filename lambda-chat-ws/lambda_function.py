@@ -2163,6 +2163,8 @@ def reflect_node(state: ReflectionState):
     print("###### reflect ######")
     draft = state['draft']
     print('draft: ', draft)
+    subject_company = state['subject_company']
+    print('subject_company: ', subject_company)
     
     reflection = []
     search_queries = []
@@ -2206,7 +2208,8 @@ def reflect_node(state: ReflectionState):
     return {
         "reflection": reflection,
         "search_queries": search_queries,
-        "revision_number": revision_number + 1
+        "revision_number": revision_number + 1,
+        "subject_company": subject_company
     }
 
 def retriever_from_opensearch(query, subject_company):
@@ -2309,9 +2312,10 @@ def revise_draft(state: ReflectionState):
                               
     filtered_docs = []    
         
-    # RAG - knowledge base
+    # RAG - OpenSearch
     subject_company = state['subject_company']
     print('subject_company: ', subject_company)
+    
     for q in search_queries:
         filtered_docs += retrieve(q, subject_company)
         print(f'q: {q}, filtered_docs: {filtered_docs}')
