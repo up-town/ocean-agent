@@ -2371,9 +2371,8 @@ def revise_draft(state: ReflectionState):
     content = []   
     if len(filtered_docs):
         for d in filtered_docs:
-            content.append(d.page_content)
-        
-    print('content: ', content)
+            content.append(d.page_content)        
+    # print('content: ', content)
 
     chat = get_chat()
     reflect = revise_prompt | chat
