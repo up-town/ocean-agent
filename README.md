@@ -689,7 +689,11 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
 
 ### 문서 생성
 
-문서의 목차와 이에 따른 작성과정은 [plan and execute 패턴](https://github.com/kyopark2014/writing-agent)을 이용합니다. 이 패턴은 이전 작성된 문서를 참고할 수 있어서 문장의 중복 및 자연스러운 연결을 위해 유용합니다. 문서의 검색과 생성은 workflow를 이용해 구성합니다.
+문서의 목차와 이에 따른 작성과정은 [plan and execute 패턴](https://github.com/kyopark2014/writing-agent?tab=readme-ov-file#plan-and-execute)과 [reflection](https://github.com/kyopark2014/writing-agent/blob/main/README.md#reflection)을 활용합니다.
+
+<img src="./chart/reflection.png" width="800">
+
+Plan and execute 패턴은 이전 작성된 문서를 참고할 수 있어서 문장의 중복 및 자연스러운 연결을 위해 유용합니다. 문서의 검색과 생성은 workflow를 이용해 구성합니다. 
 
 ```python
 def buildWorkflow():
