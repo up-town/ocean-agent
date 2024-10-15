@@ -2540,16 +2540,19 @@ def revise_answers(state: State):
                 
     return {"revised_drafts": revised_drafts}
             
-def buildReflectedOceanWorkflow():
+def buildPlanAndExecuteOceanWorkflow():
     workflow = StateGraph(State)
+    
+    # Add nodes
     workflow.add_node("plan", plan_node)
     workflow.add_node("retrieve", retrieve_node)        
     workflow.add_node("generate", generate_node)
     workflow.add_node("revise_answers", revise_answers)  # reflection
     
     # Set entry point
-    # workflow.set_entry_point("retrieve")    
-    workflow.add_edge(START, "plan")
+    workflow.set_entry_point("retrieve")    
+    
+    # Add edges
     workflow.add_edge("plan", "retrieve")
     workflow.add_edge("retrieve", "generate")
     workflow.add_edge("generate", "revise_answers")
@@ -2597,7 +2600,7 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
     subject_company = query
     
     isTyping(connectionId, requestId, "")
-    app = buildReflectedOceanWorkflow()
+    app = buildPlanAndExecuteOceanWorkflow()
         
     # Run the workflow
     inputs = {
