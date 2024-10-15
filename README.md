@@ -9,7 +9,7 @@
 
 기업 정보 요약을 위한 인프라는 Amazon serverless architecture 패턴을 따라 아래와 같이 설계되었습니다. 이러한 architecture는 변화하는 트래픽에 적절히 대응하고 비용을 최적화할 수 있습니다. 또한 AWS CDK를 이용해 편리하게 배포할 수 있습니다. 
 
-![image](https://github.com/user-attachments/assets/743759bb-167a-4f0a-8fbb-6878f167bffe)
+<img src="https://github.com/user-attachments/assets/743759bb-167a-4f0a-8fbb-6878f167bffe" width="700">
 
 
 ## OpenSearch를 이용한 RAG의 구현
