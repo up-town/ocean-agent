@@ -2225,27 +2225,42 @@ def reflect_node(state: ReflectionState):
             print('reflection: ', parsed_info.reflection)            
             print('search_queries: ', search_queries)     
         
+            #if isKorean(draft):
+            #    translated_search = []
+            #    for q in search_queries:
+            #        chat = get_chat()
+            #        if isKorean(q):
+            #            search = traslation(chat, q, "Korean", "English")
+            #        else:
+            #            continue
+            #            # search = traslation(chat, q, "English", "Korean")
+            #        translated_search.append(search)
+                        
+            #    print('translated_search: ', translated_search)
+            #    search_queries += translated_search
+
+            #print('search_queries (mixed): ', search_queries)
+            #search_queries_verified = search_queries
+            #break
+            
+            search_queries_verified = []
             if isKorean(draft):
-                translated_search = []
                 for q in search_queries:
                     chat = get_chat()
                     if isKorean(q):
                         search = traslation(chat, q, "Korean", "English")
+                        search_queries_verified.append(search)
                     else:
-                        continue
-                        # search = traslation(chat, q, "English", "Korean")
-                    translated_search.append(search)
+                        search_queries_verified.append(search)
                         
-                print('translated_search: ', translated_search)
-                search_queries += translated_search
-
-            print('search_queries (mixed): ', search_queries)
+            print('search_queries (verified): ', search_queries_verified)
             break
         
     revision_number = state["revision_number"] if state.get("revision_number") is not None else 1
     return {
         "reflection": reflection,
-        "search_queries": search_queries,
+        #"search_queries": search_queries,
+        "search_queries": search_queries_verified,
         "revision_number": revision_number + 1,
         "subject_company": subject_company
     }
