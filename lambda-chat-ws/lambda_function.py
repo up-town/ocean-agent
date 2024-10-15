@@ -1707,6 +1707,7 @@ class State(TypedDict):
     sub_quries: List[List[str]]
     relevant_contexts : list[str]
     drafts : List[str]
+    revised_drafts: Annotated[list, operator.add]  # for reflection
     
 def markdown_to_html(body, reference):
     body = body + f"\n\n### 참고자료\n\n\n"
@@ -1995,7 +1996,7 @@ def generate_node(state: State):
 #        return "end"
 #    return "continue"
     
-def buildWorkflow():
+def buildOceanWorkflow():
     workflow = StateGraph(State)
     workflow.add_node("retrieve", parallel_retriever)
         
@@ -2009,64 +2010,9 @@ def buildWorkflow():
     workflow.add_edge("generate", END)
     
     return workflow.compile()
-            
-def run_agent_ocean(connectionId, requestId, query):
-    planning_steps = [
-        "1. 회사 소개",
-        "2. 주요 영업 활동",
-        "3. 재무 현황",
-        "4. 선대 현황",
-        "5. 종합 평가"
-    ]
-    
-    sub_quries = [
-        [
-            "establish", 
-            "location", 
-            "management", 
-            "affiliated"
-        ],
-        [
-            "cargo", 
-            "route", 
-            "owned/chartered", 
-            "strategy"
-        ],
-        [
-            "financial performance", 
-            "route", 
-            "financial risk",
-            "payment"
-        ],
-        [
-            "fleet"
-        ],
-        [
-            "rating", #"infospectrum level"
-            "assessment" # overall assessment"
-        ]        
-    ]
-    
-    subject_company = query
-    
-    isTyping(connectionId, requestId, "")
-    app = buildWorkflow()
-        
-    # Run the workflow
-    inputs = {
-        "subject_company": subject_company,
-        "sub_quries": sub_quries,
-        "planning_steps": planning_steps
-    }
-    config = {
-        "recursion_limit": 50
-    }
 
-    output = app.invoke(inputs, config)   
-    print('output: ', output)
-    
+def get_final_answer(drafts, subject_company):
     final_doc = ""
-    drafts = output['drafts']
     for i, draft in enumerate(drafts):
         print(f"{i}: {draft}")
         final_doc += draft
@@ -2114,7 +2060,490 @@ def run_agent_ocean(connectionId, requestId, query):
     final_answer = final_doc+f"\n<a href={html_url} target=_blank>[미리보기 링크]</a>\n<a href={markdown_url} download=\"{subject_company}.md\">[다운로드 링크]</a>"    
 
     return final_answer
+            
+def run_agent_ocean(connectionId, requestId, query):
+    planning_steps = [
+        "1. 회사 소개",
+        "2. 주요 영업 활동",
+        "3. 재무 현황",
+        "4. 선대 현황",
+        "5. 종합 평가"
+    ]
+    
+    sub_quries = [
+        [
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        ],
+        [
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        ],
+        [
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        ],
+        [
+            "fleet"
+        ],
+        [
+            "rating", #"infospectrum level"
+            "assessment" # overall assessment"
+        ]        
+    ]
+    
+    subject_company = query
+    
+    isTyping(connectionId, requestId, "")
+    app = buildOceanWorkflow()
+        
+    # Run the workflow
+    inputs = {
+        "subject_company": subject_company,
+        "sub_quries": sub_quries,
+        "planning_steps": planning_steps
+    }
+    config = {
+        "recursion_limit": 50
+    }
 
+    output = app.invoke(inputs, config)   
+    print('output: ', output)
+    
+    final_answer = get_final_answer(output['drafts'], subject_company)
+    
+    return final_answer
+
+####################### LangGraph #######################
+# Ocean Agent Reflection
+#########################################################
+
+# Workflow - Reflection
+class ReflectionState(TypedDict):
+    draft : str
+    reflection : List[str]
+    search_queries : List[str]
+    revised_draft: str
+    revision_number: int    
+        
+class Reflection(BaseModel):
+    missing: str = Field(description="Critique of what is missing.")
+    advisable: str = Field(description="Critique of what is helpful for better writing")
+    superfluous: str = Field(description="Critique of what is superfluous")
+
+class Research(BaseModel):
+    """Provide reflection and then follow up with search queries to improve the writing."""
+
+    reflection: Reflection = Field(description="Your reflection on the initial writing.")
+    search_queries: list[str] = Field(
+        description="1-3 search queries for researching improvements to address the critique of your current writing."
+    )
+
+class ReflectionKor(BaseModel):
+    missing: str = Field(description="작성된 글에 있어야하는데 빠진 내용이나 단점")
+    advisable: str = Field(description="더 좋은 글이 되기 위해 추가하여야 할 내용")
+    superfluous: str = Field(description="글의 길이나 스타일에 대한 비평")
+
+class ResearchKor(BaseModel):
+    """글쓰기를 개선하기 위한 검색 쿼리를 제공합니다."""
+
+    reflection: ReflectionKor = Field(description="작성된 글에 대한 평가")
+    search_queries: list[str] = Field(
+        description="현재 글과 관련된 3개 이내의 검색어"
+    )
+
+def reflect_node(state: ReflectionState):
+    print("###### reflect ######")
+    draft = state['draft']
+    print('draft: ', draft)
+    
+    reflection = []
+    search_queries = []
+    for attempt in range(5):
+        chat = get_chat()
+        
+        if isKorean(draft):
+            structured_llm = chat.with_structured_output(ResearchKor, include_raw=True)
+        else:
+            structured_llm = chat.with_structured_output(Research, include_raw=True)
+            
+        info = structured_llm.invoke(draft)
+        print(f'attempt: {attempt}, info: {info}')
+                
+        if not info['parsed'] == None:
+            parsed_info = info['parsed']
+            # print('reflection: ', parsed_info.reflection)
+            reflection = [parsed_info.reflection.missing, parsed_info.reflection.advisable]
+            search_queries = parsed_info.search_queries
+                
+            print('reflection: ', parsed_info.reflection)            
+            print('search_queries: ', search_queries)     
+        
+            if isKorean(draft):
+                translated_search = []
+                for q in search_queries:
+                    chat = get_chat()
+                    if isKorean(q):
+                        search = traslation(chat, q, "Korean", "English")
+                    else:
+                        search = traslation(chat, q, "English", "Korean")
+                    translated_search.append(search)
+                        
+                print('translated_search: ', translated_search)
+                search_queries += translated_search
+
+            print('search_queries (mixed): ', search_queries)
+            break
+        
+    revision_number = state["revision_number"] if state.get("revision_number") is not None else 1
+    return {
+        "reflection": reflection,
+        "search_queries": search_queries,
+        "revision_number": revision_number + 1
+    }
+
+def retriever_from_opensearch(query, subject_company):
+    top_k = 4
+    docs = []
+    
+    bedrock_embedding = get_embedding()
+       
+    vectorstore_opensearch = OpenSearchVectorSearch(
+        index_name = index_name,
+        is_aoss = False,
+        ef_search = 1024, # 512(default)
+        m=48,
+        #engine="faiss",  # default: nmslib
+        embedding_function = bedrock_embedding,
+        opensearch_url=opensearch_url,
+        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
+    )  
+    
+    relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+        query = query,
+        k = top_k,  
+        pre_filter={
+            "doc_level": {"$eq": "child"},
+            "subject_company": {"$eq": subject_company}
+        }
+    )
+    # print('result: ', result)
+    
+    for i, document in enumerate(relevant_documents):
+        # print(f'## Document(opensearch-vector) {i+1}: {document}')
+            
+        name = document[0].metadata['name']
+        url = document[0].metadata['url']
+        content = document[0].page_content
+                   
+        docs.append(
+            Document(
+                page_content=content,
+                metadata={
+                    'name': name,
+                    'url': url,
+                    'from': 'vector'
+                },
+            )
+        )
+    return docs
+    
+def revise_draft(state: ReflectionState):   
+    print("###### revise_draft ######")
+        
+    draft = state['draft']
+    search_queries = state['search_queries']
+    reflection = state['reflection']
+    print('draft: ', draft)
+    print('search_queries: ', search_queries)
+    print('reflection: ', reflection)
+        
+    if isKorean(draft):
+        revise_template = (
+            "당신은 장문 작성에 능숙한 유능한 글쓰기 도우미입니다."                
+            "draft을 critique과 information 사용하여 수정하십시오."
+            "최종 결과는 한국어로 작성하고 <result> tag를 붙여주세요."
+                            
+            "<draft>"
+            "{draft}"
+            "</draft>"
+                            
+            "<critique>"
+            "{reflection}"
+            "</critique>"
+
+            "<information>"
+            "{content}"
+            "</information>"
+        )
+    else:    
+        revise_template = (
+            "You are an excellent writing assistant." 
+            "Revise this draft using the critique and additional information."
+            # "Provide the final answer using Korean with <result> tag."
+            "Provide the final answer with <result> tag."
+                            
+            "<draft>"
+            "{draft}"
+            "</draft>"
+                        
+            "<critique>"
+            "{reflection}"
+            "</critique>"
+
+            "<information>"
+            "{content}"
+            "</information>"
+        )
+                    
+    revise_prompt = ChatPromptTemplate([
+        ('human', revise_template)
+    ])
+                              
+    filtered_docs = []    
+        
+    # RAG - knowledge base
+    subject_company = state['subject_company']
+    for q in search_queries:
+        filtered_docs += retrieve(q, subject_company)
+        print(f'q: {q}, filtered_docs: {filtered_docs}')
+        
+    # web search
+    #for q in search_queries:
+    #    docs = tavily_search(q, 4)
+    #    print(f'q: {q}, WEB: {docs}')
+        
+    #    if len(docs):
+    #        filtered_docs += grade_documents(q, docs)
+    
+    print('filtered_docs: ', filtered_docs)
+              
+    content = []   
+    if len(filtered_docs):
+        for d in filtered_docs:
+            content.append(d.page_content)
+        
+    print('content: ', content)
+
+    chat = get_chat()
+    reflect = revise_prompt | chat
+           
+    res = reflect.invoke(
+        {
+            "draft": draft,
+            "reflection": reflection,
+            "content": content
+        }
+    )
+    output = res.content
+    # print('output: ', output)
+        
+    revised_draft = output[output.find('<result>')+8:len(output)-9]
+    # print('revised_draft: ', revised_draft) 
+            
+    if revised_draft.find('#')!=-1 and revised_draft.find('#')!=0:
+        revised_draft = revised_draft[revised_draft.find('#'):]
+
+    print('--> draft: ', draft)
+    print('--> reflection: ', reflection)
+    print('--> revised_draft: ', revised_draft)
+        
+    revision_number = state["revision_number"] if state.get("revision_number") is not None else 1
+        
+    return {
+        "revised_draft": revised_draft,
+        "revision_number": revision_number
+    }
+    
+MAX_REVISIONS = 1
+def should_continue(state: ReflectionState, config):
+    print("###### should_continue ######")
+    max_revisions = config.get("configurable", {}).get("max_revisions", MAX_REVISIONS)
+    print("max_revisions: ", max_revisions)
+            
+    if state["revision_number"] > max_revisions:
+        return "end"
+    return "continue"
+
+def buildReflection():
+    workflow = StateGraph(ReflectionState)
+
+    # Add nodes
+    workflow.add_node("reflect_node", reflect_node)
+    workflow.add_node("revise_draft", revise_draft)
+
+    # Set entry point
+    workflow.set_entry_point("reflect_node")
+        
+    workflow.add_conditional_edges(
+        "revise_draft", 
+        should_continue, 
+        {
+            "end": END, 
+            "continue": "reflect_node"}
+    )
+
+    # Add edges
+    workflow.add_edge("reflect_node", "revise_draft")
+        
+    return workflow.compile()
+
+def reflect_draft(conn, reflection_app, idx, draft):     
+    inputs = {
+        "draft": draft
+    }    
+    config = {
+        "recursion_limit": 50,
+        "max_revisions": MAX_REVISIONS
+    }
+    output = reflection_app.invoke(inputs, config)
+        
+    result = {
+        "revised_draft": output['revised_draft'],
+        "idx": idx
+    }
+            
+    conn.send(result)    
+    conn.close()
+
+def reflect_drafts_using_parallel_processing(drafts):
+    revised_drafts = drafts
+        
+    processes = []
+    parent_connections = []
+        
+    reflection_app = buildReflection()
+                
+    for idx, draft in enumerate(drafts):
+        parent_conn, child_conn = Pipe()
+        parent_connections.append(parent_conn)
+            
+        process = Process(target=reflect_draft, args=(child_conn, reflection_app, idx, draft))
+        processes.append(process)
+            
+    for process in processes:
+        process.start()
+                
+    for parent_conn in parent_connections:
+        result = parent_conn.recv()
+
+        if result is not None:
+            print('result: ', result)
+            revised_drafts[result['idx']] = result['revised_draft']
+
+    for process in processes:
+        process.join()
+          
+    return revised_drafts 
+
+def revise_answers(state: State):
+    print("###### revise_answers ######")
+    drafts = state["drafts"]        
+    print('drafts: ', drafts)
+        
+    # reflection    
+    if multi_region == 'enable':  # parallel processing
+        revised_drafts = reflect_drafts_using_parallel_processing(drafts)
+    else:
+        revised_drafts = []
+        reflection_app = buildReflection()
+                
+        final_doc = ""   
+        for idx, draft in enumerate(drafts):
+            inputs = {
+                "draft": draft
+            }    
+            config = {
+                "recursion_limit": 50,
+                "max_revisions": MAX_REVISIONS
+            }
+            output = reflection_app.invoke(inputs, config)
+            
+            revised_drafts.append(output['revised_draft'])
+                
+    return {"revised_drafts": revised_drafts}
+            
+def buildOceanReflectionWorkflow():
+    workflow = StateGraph(State)
+    workflow.add_node("retrieve", parallel_retriever)        
+    workflow.add_node("generate", generate_node)
+    workflow.add_node("revise_answers", revise_answers)  # reflection
+    
+    # Set entry point
+    # workflow.set_entry_point("retrieve")    
+    workflow.add_edge(START, "retrieve")
+    
+    workflow.add_edge("retrieve", "generate")
+    workflow.add_edge("generate", "revise_answers")
+    workflow.add_edge("revise_answers", END)
+    
+    return workflow.compile()
+    
+def run_agent_ocean_reflection(connectionId, requestId, query):
+    planning_steps = [
+        "1. 회사 소개",
+        "2. 주요 영업 활동",
+        "3. 재무 현황",
+        "4. 선대 현황",
+        "5. 종합 평가"
+    ]
+    
+    sub_quries = [
+        [
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        ],
+        [
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        ],
+        [
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        ],
+        [
+            "fleet"
+        ],
+        [
+            "rating", #"infospectrum level"
+            "assessment" # overall assessment"
+        ]        
+    ]
+    
+    subject_company = query
+    
+    isTyping(connectionId, requestId, "")
+    app = buildOceanReflectionWorkflow()
+        
+    # Run the workflow
+    inputs = {
+        "subject_company": subject_company,
+        "sub_quries": sub_quries,
+        "planning_steps": planning_steps
+    }
+    config = {
+        "recursion_limit": 50
+    }
+
+    output = app.invoke(inputs, config)   
+    print('output: ', output)
+    
+    final_answer = get_final_answer(output['revised_drafts'], subject_company)
+    
+    return final_answer
+    
 def getResponse(connectionId, jsonBody):
     print('jsonBody: ', jsonBody)
     
@@ -2221,6 +2650,9 @@ def getResponse(connectionId, jsonBody):
                     
                 elif convType == "agent-ocean":
                     msg = run_agent_ocean(connectionId, requestId, text)
+                
+                elif convType == "agent-ocean-reflection":
+                    msg = run_agent_ocean_reflection(connectionId, requestId, text)
                                     
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)
