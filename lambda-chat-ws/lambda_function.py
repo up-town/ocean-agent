@@ -2542,14 +2542,15 @@ def revise_answers(state: State):
             
 def buildReflectedOceanWorkflow():
     workflow = StateGraph(State)
+    workflow.add_node("plan", plan_node)
     workflow.add_node("retrieve", retrieve_node)        
     workflow.add_node("generate", generate_node)
     workflow.add_node("revise_answers", revise_answers)  # reflection
     
     # Set entry point
     # workflow.set_entry_point("retrieve")    
-    workflow.add_edge(START, "retrieve")
-    
+    workflow.add_edge(START, "plan")
+    workflow.add_edge("plan", "retrieve")
     workflow.add_edge("retrieve", "generate")
     workflow.add_edge("generate", "revise_answers")
     workflow.add_edge("revise_answers", END)
