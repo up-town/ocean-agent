@@ -1788,7 +1788,7 @@ def retrieve(query: str, subject_company: str):
     print(f'###### retrieve: {query} ######')
     global reference_docs
     
-    top_k = 4
+    top_k = 2
     docs = []
     
     bedrock_embedding = get_embedding()
