@@ -2561,52 +2561,15 @@ def buildPlanAndExecuteOceanWorkflow():
     return workflow.compile()
     
 def run_agent_ocean_reflection(connectionId, requestId, query):
-    planning_steps = [
-        "1. 회사 소개",
-        "2. 주요 영업 활동",
-        "3. 재무 현황",
-        "4. 선대 현황",
-        "5. 종합 평가"
-    ]
-    
-    sub_queries = [
-        [
-            "establish", 
-            "location", 
-            "management", 
-            "affiliated"
-        ],
-        [
-            "cargo", 
-            "route", 
-            "owned/chartered", 
-            "strategy"
-        ],
-        [
-            "financial performance", 
-            "route", 
-            "financial risk",
-            "payment"
-        ],
-        [
-            "fleet"
-        ],
-        [
-            "rating", #"infospectrum level"
-            "assessment" # overall assessment"
-        ]        
-    ]
-    
     subject_company = query
     
     isTyping(connectionId, requestId, "")
+
     app = buildPlanAndExecuteOceanWorkflow()
         
     # Run the workflow
     inputs = {
-        "subject_company": subject_company,
-        "sub_queries": sub_queries,
-        "planning_steps": planning_steps
+        "subject_company": subject_company
     }
     config = {
         "recursion_limit": 50
