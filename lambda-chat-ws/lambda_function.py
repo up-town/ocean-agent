@@ -2251,7 +2251,7 @@ def reflect_node(state: ReflectionState):
                         search = traslation(chat, q, "Korean", "English")
                         search_queries_verified.append(search)
                     else:
-                        search_queries_verified.append(search)
+                        search_queries_verified.append(q)
                         
             print('search_queries (verified): ', search_queries_verified)
             break
