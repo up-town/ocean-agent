@@ -1902,8 +1902,54 @@ def retrieve_for_parallel_processing(sub_queries, subject_company):
           
     return contents 
 
-def parallel_retriever(state: State):
-    print('###### parallel_retriever ######')
+def plan_node(state: State):
+    print('###### plan_node ######')
+    subject_company = state["subject_company"]    
+    
+    planning_steps = [
+        "1. 회사 소개",
+        "2. 주요 영업 활동",
+        "3. 재무 현황",
+        "4. 선대 현황",
+        "5. 종합 평가"
+    ]
+    
+    sub_queries = [
+        [
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        ],
+        [
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        ],
+        [
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        ],
+        [
+            "fleet"
+        ],
+        [
+            "rating", #"infospectrum level"
+            "assessment" # overall assessment"
+        ]        
+    ]
+        
+    return {
+        "subject_company": subject_company,
+        "planning_steps": planning_steps,
+        "sub_queries": sub_queries
+    }
+
+def retrieve_node(state: State):
+    print('###### retrieve_node ######')
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
@@ -2035,14 +2081,14 @@ def generate_node(state: State):
     
 def buildOceanWorkflow():
     workflow = StateGraph(State)
-    workflow.add_node("retrieve", parallel_retriever)
-        
+    workflow.add_node("plan", plan_node)    
+    workflow.add_node("retrieve", retrieve_node)        
     workflow.add_node("generate", generate_node)
     
     # Set entry point
-    # workflow.set_entry_point("retrieve")    
-    workflow.add_edge(START, "retrieve")
-    
+    # workflow.set_entry_point("plan")
+    workflow.add_edge(START, "plan")
+    workflow.add_edge("plan", "retrieve")    
     workflow.add_edge("retrieve", "generate")
     workflow.add_edge("generate", END)
     
@@ -2099,42 +2145,6 @@ def get_final_answer(drafts, subject_company):
     return final_answer
             
 def run_agent_ocean(connectionId, requestId, query):
-    planning_steps = [
-        "1. 회사 소개",
-        "2. 주요 영업 활동",
-        "3. 재무 현황",
-        "4. 선대 현황",
-        "5. 종합 평가"
-    ]
-    
-    sub_queries = [
-        [
-            "establish", 
-            "location", 
-            "management", 
-            "affiliated"
-        ],
-        [
-            "cargo", 
-            "route", 
-            "owned/chartered", 
-            "strategy"
-        ],
-        [
-            "financial performance", 
-            "route", 
-            "financial risk",
-            "payment"
-        ],
-        [
-            "fleet"
-        ],
-        [
-            "rating", #"infospectrum level"
-            "assessment" # overall assessment"
-        ]        
-    ]
-    
     subject_company = query
     
     isTyping(connectionId, requestId, "")
@@ -2142,9 +2152,7 @@ def run_agent_ocean(connectionId, requestId, query):
         
     # Run the workflow
     inputs = {
-        "subject_company": subject_company,
-        "sub_queries": sub_queries,
-        "planning_steps": planning_steps
+        "subject_company": subject_company
     }
     config = {
         "recursion_limit": 50
@@ -2534,7 +2542,7 @@ def revise_answers(state: State):
             
 def buildReflectedOceanWorkflow():
     workflow = StateGraph(State)
-    workflow.add_node("retrieve", parallel_retriever)        
+    workflow.add_node("retrieve", retrieve_node)        
     workflow.add_node("generate", generate_node)
     workflow.add_node("revise_answers", revise_answers)  # reflection
     
