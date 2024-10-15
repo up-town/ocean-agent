@@ -2469,7 +2469,7 @@ def revise_answers(state: State):
                 
     return {"revised_drafts": revised_drafts}
             
-def buildOceanReflectionWorkflow():
+def buildReflectedOceanWorkflow():
     workflow = StateGraph(State)
     workflow.add_node("retrieve", parallel_retriever)        
     workflow.add_node("generate", generate_node)
@@ -2525,7 +2525,7 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
     subject_company = query
     
     isTyping(connectionId, requestId, "")
-    app = buildOceanReflectionWorkflow()
+    app = buildReflectedOceanWorkflow()
         
     # Run the workflow
     inputs = {
