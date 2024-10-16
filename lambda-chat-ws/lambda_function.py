@@ -215,6 +215,25 @@ def tavily_search(query, k):
 
 # result = tavily_search('what is LangChain', 2)
 # print('search result: ', result)
+
+def reflash_opensearch_index():
+    #########################
+    # opensearch index (create)
+    #########################
+    print(f"deleting opensearch index... {vectorIndexName}") 
+    
+    try: # create index
+        response = os_client.indices.delete(
+            index_name
+        )
+        print('opensearch index was deleted:', response)
+
+        # delay 3seconds
+        time.sleep(30)        
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)                
+        #raise Exception ("Not able to create the index")
    
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -2656,6 +2675,12 @@ def getResponse(connectionId, jsonBody):
         
         msg += f"current model: {modelId}"
         print('model lists: ', msg)    
+    elif type == 'text' and body[:21] == 'reflash current index':
+        # reflash index
+        isTyping(connectionId, requestId)
+        reflash_opensearch_index()
+        msg = "The index was reflashed in OpenSearch."
+        
     else:             
         if type == 'text':
             text = body
