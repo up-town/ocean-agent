@@ -2677,7 +2677,7 @@ def getResponse(connectionId, jsonBody):
         print('model lists: ', msg)    
     elif type == 'text' and body[:21] == 'reflash current index':
         # reflash index
-        isTyping(connectionId, requestId)
+        isTyping(connectionId, requestId, "")
         reflash_opensearch_index()
         msg = "The index was reflashed in OpenSearch."
         
