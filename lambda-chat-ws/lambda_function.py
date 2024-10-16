@@ -2571,7 +2571,7 @@ def buildPlanAndExecuteOceanWorkflow():
     workflow.add_node("revise_answers", revise_answers)  # reflection
     
     # Set entry point
-    workflow.set_entry_point("retrieve")    
+    workflow.set_entry_point("plan")    
     
     # Add edges
     workflow.add_edge("plan", "retrieve")
