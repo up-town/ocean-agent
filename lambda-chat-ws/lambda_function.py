@@ -218,7 +218,7 @@ def tavily_search(query, k):
 
 def reflash_opensearch_index():
     #########################
-    # opensearch index (create)
+    # opensearch index (reflash)
     #########################
     print(f"deleting opensearch index... {vectorIndexName}") 
     
@@ -227,13 +227,11 @@ def reflash_opensearch_index():
             index_name
         )
         print('opensearch index was deleted:', response)
-
-        # delay 3seconds
-        time.sleep(30)        
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)                
-        #raise Exception ("Not able to create the index")
+        #raise Exception ("Not able to create the index")        
+    return 
    
 # websocket
 connection_url = os.environ.get('connection_url')
@@ -703,13 +701,17 @@ def query_using_RAG_context(connectionId, requestId, chat, context, revised_ques
     return msg
 
 def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
-    result = vectorstore_opensearch.similarity_search_with_score(
-        query = query,
-        k = top_k*2,  
-        pre_filter={"doc_level": {"$eq": "child"}}
-    )    
-    # print('result: ', result)
-                
+    try:
+        result = vectorstore_opensearch.similarity_search_with_score(
+            query = query,
+            k = top_k*2,  
+            pre_filter={"doc_level": {"$eq": "child"}}
+        )    
+        # print('result: ', result)
+    except Exception:
+        err_msg = traceback.format_exc()
+        print('error message: ', err_msg)        
+           
     relevant_documents = []
     docList = []  # for duplication check
     for re in result:
