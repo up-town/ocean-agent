@@ -1850,7 +1850,7 @@ def retrieve(query: str, subject_company: str):
                 )
             )
     else: 
-        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+        relevant_documents = vectorstore_opensearch.similarity_search(
             query = query,
             k = top_k,  
             pre_filter={
