@@ -979,14 +979,20 @@ def retrieve(query: str, subject_company: str):
                     },
                 )
             )
-    else: 
+    else:
+        boolean_filter = {
+            "bool": {
+                "filter":[
+                    {"match" : {"metadata.subject_company":subject_company}},
+                    {"term" : {"metadata.doc_level":"child"}}
+                ]
+            }
+        }
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
             k = top_k,  
-            pre_filter={
-                "doc_level": {"$eq": "child"},
-                "subject_company": {"$eq": subject_company}
-            }
+            search_type="script_scoring",
+            pre_filter=boolean_filter
         )
     
         for i, document in enumerate(relevant_documents):
