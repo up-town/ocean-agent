@@ -1896,12 +1896,12 @@ def retrieve(query: str, subject_company: str):
             )
     
     filtered_docs = grade_documents(query, docs) # grading
-    
+    print('----> filtered_docs: ', filtered_docs)
     filtered_docs = check_duplication(filtered_docs) # check duplication
             
     reference_docs += filtered_docs # add to reference
     
-    print('----> filtered_docs: ', filtered_docs)
+    print('----> filtered_docs(docs): ', filtered_docs)
     print('----> reference_docs: ', reference_docs)
     
     return filtered_docs
