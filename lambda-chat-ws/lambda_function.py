@@ -705,7 +705,8 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
         result = vectorstore_opensearch.similarity_search(
             query = query,
             k = top_k*2,  
-            pre_filter={"doc_level": {"$eq": "parent"}}
+            #pre_filter={"doc_level": {"$eq": "parent"}}
+            pre_filter={"term": {"metadata.doc_level": "parent"}}
         )    
         print('result: ', result)
     except Exception:
@@ -1762,11 +1763,12 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     result = vectorstore_opensearch.similarity_search(
         query = query,
         k = top_k*5,
-        pre_filter={
-            "doc_level": {"$eq": "child"},
-            "subject_company": {"$eq": subject_company}
-        }
-        # pre_filter={"term": {"metadata.id": 3}}
+        search_type="script_scoring",
+        #pre_filter={
+        #    "doc_level": {"$eq": "child"},
+        #    "subject_company": {"$eq": subject_company}
+        #}
+        pre_filter={"term": {"metadata.subject_company": subject_company}}
     )    
     print('result: ', result)
                 
@@ -1858,10 +1860,10 @@ def retrieve(query: str, subject_company: str):
         relevant_documents = vectorstore_opensearch.similarity_search(
             query = query,
             k = top_k,  
-            pre_filter={
-                "doc_level": {"$eq": "child"},
-                "subject_company": {"$eq": subject_company}
-            }
+            #pre_filter={
+            #    "doc_level": {"$eq": "child"},
+            #    "subject_company": {"$eq": subject_company}
+            #}
         )
         # print('result: ', result)
     
