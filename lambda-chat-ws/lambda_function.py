@@ -1767,20 +1767,11 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
                 {"term" : {"metadata.doc_level":"child"}}
             ]
         }
-    }
-          
+    }          
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*2,
         search_type="script_scoring",
-        #pre_filter={
-            #"term": {
-            #    "metadata.doc_level": "child"
-            #},
-        #    "term": {
-        #        "metadata.subject_company": [subject_company+'*']
-        #    }
-        #}
         pre_filter = boolean_filter
     )    
     print('result: ', result)
@@ -1870,15 +1861,19 @@ def retrieve(query: str, subject_company: str):
                 )
             )
     else: 
+        boolean_filter = {
+            "bool": {
+                "filter":[
+                    {"match" : {"metadata.subject_company":subject_company}},
+                    {"term" : {"metadata.doc_level":"child"}}
+                ]
+            }
+        }
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
             k = top_k,  
             search_type="script_scoring",
-            pre_filter={
-                "term": {
-                    "metadata.subject_company": subject_company
-                }
-            }
+            pre_filter=boolean_filter
         )
         # print('result: ', result)
     
