@@ -1157,11 +1157,23 @@ def generate_node(state: State):
 
 메뉴에서 "Ocean Agent (Reflection)"을 선택하고 "Suzano SA"을 입력하면 plan and execute와 reflection이 적용된 결과를 아래 링크와 같이 얻을 수 있습니다. plan and execute를 적용했을 때보다 더 자세하고 많은 정보를 얻을 수 있지만, reflection을 위해 더 많은 token과 수행 시간을 필요로 합니다.
 
+#### 최종 결과 
+
 [Suzano SA_reflection.md](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Suzano%20SA_reflection.md)
 
 [Oldendorff Carriers.md](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Oldendorff%20Carriers.md)
 
 [Prony Resources New Caledonia](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Prony%20Resources%20New%20Caledonia.md)
+
+[Polaris Shipping](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Polaris%20Shipping.md)
+
+[United Kaiun Kaisha]
+
+[Delta Corp Shipping]
+
+[An Trung Tin Shipping]
+
+[Alpha Bulkers Shipmanagement]
 
 ## 결론
 
