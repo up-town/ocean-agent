@@ -1894,15 +1894,11 @@ def retrieve(query: str, subject_company: str):
                     },
                 )
             )
-    print('----> docs: ', docs)
     filtered_docs = grade_documents(query, docs) # grading
-    print('----> filtered_docs: ', filtered_docs)
+
     filtered_docs = check_duplication(filtered_docs) # check duplication
             
     reference_docs += filtered_docs # add to reference
-    
-    print('----> filtered_docs(docs): ', filtered_docs)
-    print('----> reference_docs: ', reference_docs)
     
     return filtered_docs
 
@@ -2698,7 +2694,6 @@ def getResponse(connectionId, jsonBody):
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)
                 
-                print('reference_docs: ', reference_docs)
                 if reference_docs:
                     reference = get_references(reference_docs)
                 
