@@ -1840,7 +1840,7 @@ def retrieve(query: str, subject_company: str):
         relevant_documents = get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company)
                         
         for i, document in enumerate(relevant_documents):
-            # print(f'## Document(opensearch-vector) {i+1}: {document}')
+            print(f'## Document(opensearch-vector) {i+1}: {document}')
             
             parent_doc_id = document[0].metadata['parent_doc_id']
             doc_level = document[0].metadata['doc_level']
@@ -1894,7 +1894,7 @@ def retrieve(query: str, subject_company: str):
                     },
                 )
             )
-    
+    print('----> docs: ', docs)
     filtered_docs = grade_documents(query, docs) # grading
     print('----> filtered_docs: ', filtered_docs)
     filtered_docs = check_duplication(filtered_docs) # check duplication
