@@ -1772,7 +1772,8 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             #"term": {
             #    "metadata.doc_level": "child"
             #},
-            "term": {                
+            "multi_match": {
+                "metadata.doc_level": "child",       
                 "metadata.subject_company": subject_company
             }
         }
@@ -1869,10 +1870,8 @@ def retrieve(query: str, subject_company: str):
             k = top_k,  
             search_type="script_scoring",
             pre_filter={
-                "term": {
-                    "metadata.doc_level": "child"
-                },
-                "term": {                
+                "multi_match": {
+                    "metadata.doc_level": "child",       
                     "metadata.subject_company": subject_company
                 }
             }
