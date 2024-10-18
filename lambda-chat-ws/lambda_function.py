@@ -1763,8 +1763,8 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     boolean_filter = {
         "bool": {
             "should":[
-                {"match" : {"metadata.subject_company":subject_company}},
-                {"term" : {"metadata.doc_level":"child"}}
+                {"match" : {"metadata.subject_company":subject_company},
+                 "term" : {"metadata.doc_level":"child"}}
             ]
         }
     }
