@@ -705,6 +705,7 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
         result = vectorstore_opensearch.similarity_search(
             query = query,
             k = top_k*2,  
+            search_type="script_scoring",
             #pre_filter={"doc_level": {"$eq": "parent"}}
             pre_filter={"term": {"metadata.doc_level": "parent"}}
         )    
@@ -1768,7 +1769,12 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         #    "doc_level": {"$eq": "child"},
         #    "subject_company": {"$eq": subject_company}
         #}
-        pre_filter={"term": {"metadata.subject_company": subject_company}}
+        pre_filter={
+            "term": {
+                "doc_level": {"$eq": "child"},
+                "metadata.subject_company": subject_company
+            }
+        }
     )    
     print('result: ', result)
                 
