@@ -2132,6 +2132,8 @@ def buildOceanWorkflow():
     return workflow.compile()
 
 def get_final_answer(drafts, subject_company):
+    global reference_docs
+    
     final_doc = ""
     for i, draft in enumerate(drafts):
         print(f"{i}: {draft}")
@@ -2158,6 +2160,7 @@ def get_final_answer(drafts, subject_company):
     # html file
     html_key = 'markdown/'+f"{subject_company}.html"
     
+    print('reference_docs: ', reference_docs)
     reference = []
     if reference_docs:
         reference = get_references_for_html(reference_docs)
@@ -2694,6 +2697,7 @@ def getResponse(connectionId, jsonBody):
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)
                 
+                print('reference_docs: ', reference_docs)
                 if reference_docs:
                     reference = get_references(reference_docs)
                 
