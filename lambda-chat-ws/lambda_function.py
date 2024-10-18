@@ -1764,7 +1764,9 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         "bool": {
             "should":[
                 {
-                    "match" : {"metadata.subject_company":subject_company},
+                    "match" : {"metadata.subject_company":subject_company}
+                },
+                {
                     "term": {"metadata.doc_level": "child"}
                 }
             ]
@@ -1791,7 +1793,7 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         #        "metadata.subject_company": [subject_company+'*']
         #    }
         #}
-        pre_fitler = boolean_filter2
+        pre_fitler = boolean_filter
     )    
     print('result: ', result)
                 
