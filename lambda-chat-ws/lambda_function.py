@@ -2695,6 +2695,7 @@ def getResponse(connectionId, jsonBody):
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)
                 
+                print('reference_docs: ', reference_docs)
                 if reference_docs:
                     reference = get_references(reference_docs)
                 
