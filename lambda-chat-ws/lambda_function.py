@@ -706,8 +706,7 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
             query = query,
             k = top_k*2,  
             search_type="script_scoring",
-            pre_filter={"doc_level": {"$eq": "parent"}}
-            #pre_filter={"term": {"metadata.doc_level": "parent"}}
+            pre_filter={"term": {"metadata.doc_level": "child"}}
         )    
         print('result: ', result)
     except Exception:
@@ -823,6 +822,8 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = text,
             k = top_k,
+            search_type="script_scoring",
+            pre_filter={"term": {"metadata.doc_level": "child"}}
         )
         
         for i, document in enumerate(relevant_documents):
@@ -1573,6 +1574,8 @@ def search_by_opensearch(keyword: str) -> str:
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = keyword,
             k = top_k,
+            search_type="script_scoring",
+            pre_filter={"term": {"metadata.doc_level": "child"}}
         )
 
         for i, document in enumerate(relevant_documents):
@@ -1761,17 +1764,13 @@ def markdown_to_html(body, reference):
 def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
     print(f"query: {query}, subject_company: {subject_company}")
               
-    result = vectorstore_opensearch.similarity_search(
+    result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
         k = top_k*5,
         search_type="script_scoring",
-        #pre_filter={
-        #    "doc_level": {"$eq": "child"},
-        #    "subject_company": {"$eq": subject_company}
-        #}
         pre_filter={
             "term": {
-                "doc_level": {"$eq": "child"},
+                "metadata.doc_level": "child",
                 "metadata.subject_company": subject_company
             }
         }
@@ -1863,13 +1862,15 @@ def retrieve(query: str, subject_company: str):
                 )
             )
     else: 
-        relevant_documents = vectorstore_opensearch.similarity_search(
+        relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = query,
             k = top_k,  
-            #pre_filter={
-            #    "doc_level": {"$eq": "child"},
-            #    "subject_company": {"$eq": subject_company}
-            #}
+            pre_filter={
+                "term": {
+                    "metadata.doc_level": "child",
+                    "metadata.subject_company": subject_company
+                }
+            }
         )
         # print('result: ', result)
     
