@@ -2251,6 +2251,7 @@ def reflect_node(state: ReflectionState):
     
     reflection = []
     search_queries = []
+    search_queries_verified = []
     for attempt in range(5):
         chat = get_chat()
         
@@ -2288,8 +2289,7 @@ def reflect_node(state: ReflectionState):
             #print('search_queries (mixed): ', search_queries)
             #search_queries_verified = search_queries
             #break
-            
-            search_queries_verified = []
+                        
             if isKorean(draft):
                 for q in search_queries:
                     chat = get_chat()
