@@ -821,9 +821,7 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
     else: 
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = text,
-            k = top_k,
-            search_type="script_scoring",
-            pre_filter={"term": {"metadata.doc_level": "child"}}
+            k = top_k
         )
         
         for i, document in enumerate(relevant_documents):
@@ -1573,9 +1571,7 @@ def search_by_opensearch(keyword: str) -> str:
     else: 
         relevant_documents = vectorstore_opensearch.similarity_search_with_score(
             query = keyword,
-            k = top_k,
-            search_type="script_scoring",
-            pre_filter={"term": {"metadata.doc_level": "child"}}
+            k = top_k
         )
 
         for i, document in enumerate(relevant_documents):
@@ -1772,9 +1768,8 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             #"term": {
             #    "metadata.doc_level": "child"
             #},
-            "multi_match": {
-                "metadata.doc_level": "child",       
-                "metadata.subject_company": subject_company
+            "match": {
+                "metadata.subject_company": [subject_company+'*']
             }
         }
     )    
@@ -1870,8 +1865,7 @@ def retrieve(query: str, subject_company: str):
             k = top_k,  
             search_type="script_scoring",
             pre_filter={
-                "multi_match": {
-                    "metadata.doc_level": "child",       
+                "term": {
                     "metadata.subject_company": subject_company
                 }
             }
