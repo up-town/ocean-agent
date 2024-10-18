@@ -1901,6 +1901,8 @@ def retrieve(query: str, subject_company: str):
             
     reference_docs += filtered_docs # add to reference
     
+    print('----> reference_docs: ', reference_docs)
+    
     return filtered_docs
 
 def parallel_retrieve(conn, q, subject_company):
