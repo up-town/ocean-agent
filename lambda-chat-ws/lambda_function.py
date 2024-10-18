@@ -705,9 +705,9 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
         result = vectorstore_opensearch.similarity_search(
             query = query,
             k = top_k*2,  
-            pre_filter={"doc_level": {"$eq": "child"}}
+            pre_filter={"doc_level": {"$eq": "parent"}}
         )    
-        # print('result: ', result)
+        print('result: ', result)
     except Exception:
         err_msg = traceback.format_exc()
         print('error message: ', err_msg)        
@@ -1766,8 +1766,9 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
             "doc_level": {"$eq": "child"},
             "subject_company": {"$eq": subject_company}
         }
+        # pre_filter={"term": {"metadata.id": 3}}
     )    
-    # print('result: ', result)
+    print('result: ', result)
                 
     relevant_documents = []
     docList = []
@@ -2298,52 +2299,6 @@ def reflect_node(state: ReflectionState):
         "subject_company": subject_company
     }
 
-def retriever_from_opensearch(query, subject_company):
-    top_k = 4
-    docs = []
-    
-    bedrock_embedding = get_embedding()
-       
-    vectorstore_opensearch = OpenSearchVectorSearch(
-        index_name = index_name,
-        is_aoss = False,
-        ef_search = 1024, # 512(default)
-        m=48,
-        #engine="faiss",  # default: nmslib
-        embedding_function = bedrock_embedding,
-        opensearch_url=opensearch_url,
-        http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
-    )  
-    
-    relevant_documents = vectorstore_opensearch.similarity_search(
-        query = query,
-        k = top_k,  
-        pre_filter={
-            "doc_level": {"$eq": "child"},
-            "subject_company": {"$eq": subject_company}
-        }
-    )
-    # print('result: ', result)
-    
-    for i, document in enumerate(relevant_documents):
-        # print(f'## Document(opensearch-vector) {i+1}: {document}')
-            
-        name = document[0].metadata['name']
-        url = document[0].metadata['url']
-        content = document[0].page_content
-                   
-        docs.append(
-            Document(
-                page_content=content,
-                metadata={
-                    'name': name,
-                    'url': url,
-                    'from': 'vector'
-                },
-            )
-        )
-    return docs
-    
 def revise_draft(state: ReflectionState):   
     print("###### revise_draft ######")
         
