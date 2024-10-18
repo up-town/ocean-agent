@@ -38,6 +38,7 @@ const supportedFormat = JSON.stringify(["pdf", "txt", "csv", "pptx", "ppt", "doc
 
 const max_object_size = 102400000; // 100 MB max size of an object, 50MB(default)
 const enableHybridSearch = 'true';
+const enableContexualRetrieval = 'true';
 
 const claude3_5_sonnet = [
   {
@@ -166,6 +167,7 @@ const titan_embedding_v2 = [  // dimension = 1024
 const LLM_for_chat = claude3_sonnet;
 const LLM_for_multimodal = claude3_sonnet;
 const LLM_embedding = titan_embedding_v2;
+const LLM_for_contexual_retrieval = claude3_haiku;
 const vectorIndexName = projectName
 
 export class CdkOceanAgentStack extends cdk.Stack {
@@ -783,11 +785,13 @@ export class CdkOceanAgentStack extends cdk.Stack {
           LLM_for_chat: JSON.stringify(LLM_for_chat),          
           LLM_for_multimodal: JSON.stringify(claude3_sonnet),          
           LLM_embedding: JSON.stringify(LLM_embedding),
+          LLM_for_contexual_retrieval: JSON.stringify(LLM_for_contexual_retrieval),          
           roleArn: roleLambdaWebsocket.roleArn,
           path: 'https://'+distribution.domainName+'/',           
           max_object_size: String(max_object_size),
           supportedFormat: supportedFormat,
           enableHybridSearch: enableHybridSearch,
+          enableContexualRetrieval: enableContexualRetrieval,          
           vectorIndexName: vectorIndexName
         }
       });         

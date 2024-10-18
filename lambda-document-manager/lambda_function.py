@@ -44,9 +44,12 @@ doc_prefix = s3_prefix+'/'
 LLM_for_chat = json.loads(os.environ.get('LLM_for_chat'))
 LLM_for_multimodal= json.loads(os.environ.get('LLM_for_multimodal'))
 LLM_embedding = json.loads(os.environ.get('LLM_embedding'))
+LLM_for_contexual_retrieval = json.loads(os.environ.get('LLM_for_contexual_retrieval'))
+
 selected_chat = 0
 selected_multimodal = 0
 selected_embedding = 0
+selected_contexual_chat = 0
 maxOutputTokens = 4096
 
 roleArn = os.environ.get('roleArn') 
@@ -57,6 +60,7 @@ supportedFormat = json.loads(os.environ.get('supportedFormat'))
 print('supportedFormat: ', supportedFormat)
 
 enableHybridSearch = os.environ.get('enableHybridSearch')
+enableContexualRetrieval = os.environ.get('enableContexualRetrieval')
 vectorIndexName = os.environ.get('vectorIndexName')
 
 enableImageExtraction = 'true'
@@ -146,6 +150,44 @@ def get_chat():
     selected_chat = selected_chat + 1
     if selected_chat == len(LLM_for_chat):
         selected_chat = 0
+    
+    return chat
+
+def get_contexual_retrieval_chat():
+    global selected_contexual_chat
+    profile = LLM_for_contexual_retrieval[selected_contexual_chat]
+    bedrock_region =  profile['bedrock_region']
+    modelId = profile['model_id']
+    print(f'selected_contexual_chat: {selected_contexual_chat}, bedrock_region: {bedrock_region}, modelId: {modelId}')
+                          
+    # bedrock   
+    boto3_bedrock = boto3.client(
+        service_name='bedrock-runtime',
+        region_name=bedrock_region,
+        config=Config(
+            retries = {
+                'max_attempts': 30
+            }
+        )
+    )
+    parameters = {
+        "max_tokens":maxOutputTokens,     
+        "temperature":0.1,
+        "top_k":250,
+        "top_p":0.9,
+        "stop_sequences": [HUMAN_PROMPT]
+    }
+    # print('parameters: ', parameters)
+
+    chat = ChatBedrock(   # new chat model
+        model_id=modelId,
+        client=boto3_bedrock, 
+        model_kwargs=parameters,
+    )    
+    
+    selected_contexual_chat = selected_contexual_chat + 1
+    if selected_contexual_chat == len(LLM_for_contexual_retrieval):
+        selected_contexual_chat = 0
     
     return chat
 
@@ -426,6 +468,51 @@ def create_nori_index():
 
 if enableHybridSearch == 'true':
     create_nori_index()
+
+def get_contexual_docs(whole_doc, splitted_docs):
+    contextual_template = (
+        "<document>"
+        "{WHOLE_DOCUMENT}"
+        "</document>"
+        "Here is the chunk we want to situate within the whole document."
+        "<chunk>"
+        "{CHUNK_CONTENT}"
+        "</chunk>"
+        "Please give a short succinct context to situate this chunk within the overall document for the purposes of improving search retrieval of the chunk."
+        "Answer only with the succinct context and nothing else."
+        "Put it in <result> tags."
+    )          
+    
+    contextual_prompt = ChatPromptTemplate([
+        ('human', contextual_template)
+    ])
+
+    docs = []
+    for i, doc in enumerate(splitted_docs):        
+        chat = get_contexual_retrieval_chat()
+        
+        contexual_chain = contextual_prompt | chat
+            
+        response = contexual_chain.invoke(
+            {
+                "WHOLE_DOCUMENT": whole_doc.page_content,
+                "CHUNK_CONTENT": doc.page_content
+            }
+        )
+        # print('--> contexual chunk: ', response)
+        output = response.content
+        contextualized_chunk = output[output.find('<result>')+8:len(output)-9]
+        
+        print(f"--> {i}: original_chunk: {doc.page_content}")
+        print(f"--> {i}: contexualized_chunk: {contextualized_chunk}")
+        
+        docs.append(
+            Document(
+                page_content=contextualized_chunk+"\n\n"+doc.page_content,
+                metadata=doc.metadata
+            )
+        )
+    return docs
     
 def add_to_opensearch(docs, key):    
     if len(docs) == 0:
@@ -456,13 +543,18 @@ def add_to_opensearch(docs, key):
         parent_docs = parent_splitter.split_documents(docs)
         print('len(parent_docs): ', len(parent_docs))
         
+        print('parent chunk[0]: ', parent_docs[0].page_content)
+        parent_docs = get_contexual_docs(docs[-1], parent_docs)
+        print('parent contextual chunk[0]: ', parent_docs[0].page_content)
+                
         if len(parent_docs):
             # print('parent_docs[0]: ', parent_docs[0])
             # parent_doc_ids = [str(uuid.uuid4()) for _ in parent_docs]
             # print('parent_doc_ids: ', parent_doc_ids)
+            
             for i, doc in enumerate(parent_docs):
                 doc.metadata["doc_level"] = "parent"
-                print(f"parent_docs[{i}]: {doc}")
+                # print(f"parent_docs[{i}]: {doc}")
                     
             try:        
                 parent_doc_ids = vectorstore.add_documents(parent_docs, bulk_size = 10000)
@@ -471,28 +563,19 @@ def add_to_opensearch(docs, key):
                 
                 child_docs = []
                        
-                page = subject_company = rating_date = ""
                 for i, doc in enumerate(parent_docs):
                     _id = parent_doc_ids[i]
                     sub_docs = child_splitter.split_documents([doc])
-                    
-                    page = subject_company = rating_date = ""
-                    if "page" in doc.metadata:
-                        page = doc.metadata["page"]
-                    if "subject_company" in doc.metadata:
-                        subject_company = doc.metadata["subject_company"]
-                    if "rating_date" in doc.metadata:
-                        rating_date = doc.metadata["rating_date"]
-                    
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
                         _doc.metadata["doc_level"] = "child"
-                        _doc.metadata["page"] = page                        
-                        _doc.metadata["subject_company"] = subject_company
-                        _doc.metadata["rating_date"] = rating_date
                         
                     child_docs.extend(sub_docs)
-                print('child_docs: ', child_docs)
+                # print('child_docs: ', child_docs)
+                
+                print('child chunk[0]: ', child_docs[0].page_content)
+                child_docs = get_contexual_docs(docs[-1], child_docs)
+                print('child contextual chunk[0]: ', child_docs[0].page_content)
                 
                 child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 10000)
                 print('child_doc_ids: ', child_doc_ids) 
@@ -513,8 +596,14 @@ def add_to_opensearch(docs, key):
         
         documents = text_splitter.split_documents(docs)
         print('len(documents): ', len(documents))
-        if len(documents):
-            print('documents[0]: ', documents[0])        
+            
+        if len(documents):            
+            if enableContexualRetrieval == 'true':                        
+                print('chunk[0]: ', documents[0].page_content)             
+                documents = get_contexual_docs(docs[-1], documents)
+                print('contextual chunk[0]: ', documents[0].page_content)  
+            else:
+                print('documents[0]: ', documents[0])
             
         try:        
             ids = vectorstore.add_documents(documents, bulk_size = 10000)
