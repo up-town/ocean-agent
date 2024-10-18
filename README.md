@@ -964,6 +964,12 @@ def generate_node(state: State):
 
 ### Agent RAG 기본 동작
 
+채팅 메뉴에서 "RAG"를 선택하고 "Suzano에 대한 연락처 정보는?"로 입력 후에 결과를 확인합니다.
+
+![noname](https://github.com/user-attachments/assets/b1c2e1e4-1c4d-422b-af5e-b7e268cce5e5)
+
+
+
 채팅 메뉴에서 "Agentic RAG"를 선택한 후에 "Suzano는 어떤 회사이지?"라고 입력하면 아래와 같이 RAG와 웹검색을 통해 얻어진 정보와 관련 문서를 확인할 수 있습니다.
 
 ![noname](https://github.com/user-attachments/assets/26af0bc3-fbee-4f8d-971e-be899cc4124b)
