@@ -706,8 +706,8 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
             query = query,
             k = top_k*2,  
             search_type="script_scoring",
-            #pre_filter={"doc_level": {"$eq": "parent"}}
-            pre_filter={"term": {"metadata.doc_level": "parent"}}
+            pre_filter={"doc_level": {"$eq": "parent"}}
+            #pre_filter={"term": {"metadata.doc_level": "parent"}}
         )    
         print('result: ', result)
     except Exception:
