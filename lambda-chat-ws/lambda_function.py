@@ -702,7 +702,7 @@ def query_using_RAG_context(connectionId, requestId, chat, context, revised_ques
 
 def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     try:
-        result = vectorstore_opensearch.similarity_search_with_score(
+        result = vectorstore_opensearch.similarity_search(
             query = query,
             k = top_k*2,  
             pre_filter={"doc_level": {"$eq": "child"}}
@@ -1759,9 +1759,13 @@ def markdown_to_html(body, reference):
 def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company):
     print(f"query: {query}, subject_company: {subject_company}")
               
-    result = vectorstore_opensearch.similarity_search_with_score(
+    result = vectorstore_opensearch.similarity_search(
         query = query,
-        k = top_k*5
+        k = top_k*5,
+        pre_filter={
+            "doc_level": {"$eq": "child"},
+            "subject_company": {"$eq": subject_company}
+        }
     )    
     # print('result: ', result)
                 
@@ -2311,7 +2315,7 @@ def retriever_from_opensearch(query, subject_company):
         http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
     )  
     
-    relevant_documents = vectorstore_opensearch.similarity_search_with_score(
+    relevant_documents = vectorstore_opensearch.similarity_search(
         query = query,
         k = top_k,  
         pre_filter={
