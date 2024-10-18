@@ -921,7 +921,7 @@ def get_references(docs):
         # print('excerpt(quotation removed): ', excerpt)
         print('length: ', len(excerpt))
         
-        if len(excerpt)>5000:
+        if len(excerpt)<5000:
             if page:
                 reference = reference + f"{cnt}. {page}page in <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
             else:
