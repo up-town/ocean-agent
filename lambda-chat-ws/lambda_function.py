@@ -1630,6 +1630,15 @@ def search_by_opensearch(keyword: str) -> str:
         
     return relevant_context
 
+def update_state_message(msg:str, config):
+    print(msg)
+    print('config: ', config)
+    
+    requestId = config.get("configurable", {}).get("requestId", "")
+    connection = config.get("configurable", {}).get("connectionId", "")
+    
+    isTyping(connection, requestId, msg)
+    
 def run_agent_executor(connectionId, requestId, query):
     chatModel = get_chat() 
     tools = [get_current_time, get_book_list, get_weather_info, search_by_tavily, search_by_opensearch]
@@ -1639,7 +1648,7 @@ def run_agent_executor(connectionId, requestId, query):
     class State(TypedDict):
         # messages: Annotated[Sequence[BaseMessage], operator.add]
         messages: Annotated[list, add_messages]
-
+                
     tool_node = ToolNode(tools)
 
     def should_continue(state: State) -> Literal["continue", "end"]:
@@ -1648,6 +1657,7 @@ def run_agent_executor(connectionId, requestId, query):
         # print('(should_continue) messages: ', messages)
         
         last_message = messages[-1]
+        print('(should_continue) last_message: ', last_message)
                 
         if not last_message.tool_calls:
             next = "end"
@@ -1711,7 +1721,11 @@ def run_agent_executor(connectionId, requestId, query):
     isTyping(connectionId, requestId, "")
     
     inputs = [HumanMessage(content=query)]
-    config = {"recursion_limit": 50}
+    config = {
+        "recursion_limit": 50,
+        "requestId": requestId,
+        "connectionId": connectionId
+    }
     
     message = ""
     for event in app.stream({"messages": inputs}, config, stream_mode="values"):   
@@ -1993,7 +2007,7 @@ def retrieve_node(state: State, config):
     planning_steps = state["planning_steps"]
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
     
-    notify_state_message('retrieving...', config)
+    update_state_message('retrieving...', config)
     
     relevant_contexts = []        
     references = []
@@ -2029,8 +2043,11 @@ def retrieve_node(state: State, config):
         "references": references
     }
 
-def generate_node(state: State):    
+def generate_node(state: State, config):        
     print('###### generate_node ######')
+    
+    update_state_message('generating...', config)
+    
     write_template = (
         "당신은 기업에 대한 보고서를 작성하는 훌륭한 글쓰기 도우미입니다."
         "아래와 같이 원본 보고서 지시사항과 계획한 보고서 단계를 제공하겠습니다."
@@ -2210,7 +2227,9 @@ def run_agent_ocean(connectionId, requestId, query):
         "subject_company": subject_company
     }
     config = {
-        "recursion_limit": 50
+        "recursion_limit": 50,
+        "requestId": requestId,
+        "connectionId": connectionId
     }
 
     output = app.invoke(inputs, config)   
@@ -2435,15 +2454,6 @@ def revise_draft(state: ReflectionState):
         "revised_draft": revised_draft,
         "revision_number": revision_number
     }
-
-def notify_state_message(msg:str, config):
-    print(msg)
-    print('config: ', config)
-    
-    requestId = config.get("configurable", {}).get("requestId", "")
-    connection = config.get("configurable", {}).get("connectionId", "")
-    
-    isTyping(connection, requestId, msg)
     
 MAX_REVISIONS = 1
 def should_continue(state: ReflectionState, config):
@@ -2529,12 +2539,14 @@ def reflect_drafts_using_parallel_processing(drafts, subject_company):
           
     return revised_drafts 
 
-def revise_answers(state: State):
+def revise_answers(state: State, config):
     print("###### revise_answers ######")
     drafts = state["drafts"]
     print('drafts: ', drafts)
     subject_company = state['subject_company']
     print('subject_company: ', subject_company)
+    
+    update_state_message('revising...', config)
     
     # reflection
     if multi_region == 'enable':  # parallel processing
