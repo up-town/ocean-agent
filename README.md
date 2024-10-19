@@ -1175,7 +1175,7 @@ def generate_node(state: State):
 
 [United Kaiun Kaisha](https://github.com/kyopark2014/ocean-agent/blob/main/contents/United%20Kaiun%20Kaisha.md)
 
-[Delta Corp Shipping](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Delta%20Corp%20Shipping.md)
+[Delta Corp](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Delta%20Corp.md)
 
 [An Trung Tin Shipping](https://github.com/kyopark2014/ocean-agent/blob/main/contents/An%20Trung%20Tin%20Shipping.md)
 
