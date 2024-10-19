@@ -960,6 +960,9 @@ def get_references_for_html(docs):
         if "name" in doc.metadata:
             name = doc.metadata['name']
             #print('name: ', name)     
+        pos = name.rfind('/')
+        name = name[pos+1:]
+        print(f"name: {name}")
            
         excerpt = ""+doc.page_content
 
