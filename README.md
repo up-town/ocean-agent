@@ -1165,21 +1165,21 @@ def generate_node(state: State):
 
 #### 결과의 예
 
-[Suzano SA_reflection](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Suzano%20SA_reflection.md)
+[Suzano SA]()
 
 [Oldendorff Carriers](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Oldendorff%20Carriers.md)
 
 [Prony Resources New Caledonia](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Prony%20Resources%20New%20Caledonia.md)
 
-[Polaris Shipping](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Polaris%20Shipping.md)
+[Polaris]()
 
 [United Kaiun Kaisha](https://github.com/kyopark2014/ocean-agent/blob/main/contents/United%20Kaiun%20Kaisha.md)
 
 [Delta Corp](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Delta%20Corp.md)
 
-[An Trung Tin]()
+[An Trung Tin](https://github.com/kyopark2014/ocean-agent/blob/main/contents/An%20Trung%20Tin.md)
 
-[Alpha Bulkers Shipmanagement](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Alpha%20Bulkers%20Shipmanagement.md)
+[Alpha Bulkers](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Alpha%20Bulkers.md)
 
 ## 결론
 
@@ -1195,6 +1195,16 @@ OpenSearch를 활용하여 RAG를 생성하고, 기업 정보를 저장하여 �
 
 "Polaris Shipping"을 검색하면 "Delta Corp Shipping"이 유사한 문서로 검색이 될 수 있습니다. 이 경우에 문장의 앞부분에 요약이 contextual retrieval로 제공됨으로서 문제가 발생할 가능성이 낮아지지만, 유사한 이름을 가지는 문서들이 같이 검색이 되면 결과에 영향을 미칠 수 있습니다. 만약 문제가 되는 경우가 발생하면 검색을 match에서 term으로 변경하여야 합니다. 만약 term으로 지정하면 검색시 회사명이 full name으로 정확하게 입력되어야 합니다.
 
+```python
+    boolean_filter = {
+        "bool": {
+            "filter":[
+                {"match" : {"metadata.subject_company":subject_company}},
+                {"term" : {"metadata.doc_level":"child"}}
+            ]
+        }
+    }          
+```
 
 ## 리소스 정리하기 
 
