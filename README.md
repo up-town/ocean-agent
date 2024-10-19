@@ -1180,8 +1180,6 @@ def generate_node(state: State):
 
 ## 실행결과
 
-### RAG 기본 동작
-
 ### Agent RAG 기본 동작
 
 채팅 메뉴에서 "RAG"를 선택하고 "Suzano에 대한 연락처 정보는?"로 입력 후에 결과를 확인합니다.
