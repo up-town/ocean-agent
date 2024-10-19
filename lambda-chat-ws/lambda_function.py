@@ -1987,11 +1987,13 @@ def plan_node(state: State):
         "sub_queries": sub_queries
     }
 
-def retrieve_node(state: State):
+def retrieve_node(state: State, config):
     print('###### retrieve_node ######')
     subject_company = state["subject_company"]    
     planning_steps = state["planning_steps"]
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
+    
+    notify_state_message('retrieving...', config)
     
     relevant_contexts = []        
     references = []
@@ -2433,6 +2435,15 @@ def revise_draft(state: ReflectionState):
         "revised_draft": revised_draft,
         "revision_number": revision_number
     }
+
+def notify_state_message(msg:str, config):
+    print(msg)
+    print('config: ', config)
+    
+    requestId = config.get("configurable", {}).get("requestId", "")
+    connection = config.get("configurable", {}).get("connectionId", "")
+    
+    isTyping(connection, requestId, msg)
     
 MAX_REVISIONS = 1
 def should_continue(state: ReflectionState, config):
@@ -2579,7 +2590,9 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
         "subject_company": subject_company
     }
     config = {
-        "recursion_limit": 50
+        "recursion_limit": 50,
+        "requestId": requestId,
+        "connectionId": connectionId
     }
 
     output = app.invoke(inputs, config)   
