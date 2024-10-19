@@ -1703,7 +1703,7 @@ def run_agent_executor(connectionId, requestId, query):
             toolinfo = response.tool_calls[-1]            
             if toolinfo['type'] == 'tool_call':
                 print('tool name: ', toolinfo['name'])                    
-                update_state_message(f'calling... {toolinfo['name']}', config)
+                update_state_message(f"calling... {toolinfo['name']}", config)
         
         return {"messages": [response]}
 
