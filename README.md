@@ -1165,13 +1165,13 @@ def generate_node(state: State):
 
 #### 결과의 예
 
-[Suzano SA]()
+[Suzano SA](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Suzano%20SA.md)
 
 [Oldendorff Carriers](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Oldendorff%20Carriers.md)
 
 [Prony Resources New Caledonia](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Prony%20Resources%20New%20Caledonia.md)
 
-[Polaris]()
+[Polaris](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Polaris.md)
 
 [United Kaiun Kaisha](https://github.com/kyopark2014/ocean-agent/blob/main/contents/United%20Kaiun%20Kaisha.md)
 
