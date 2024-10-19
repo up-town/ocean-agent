@@ -1261,6 +1261,12 @@ OpenSearch를 활용하여 RAG를 생성하고, 기업 정보를 저장하여 �
             ]
         }
     }          
+    result = vectorstore_opensearch.similarity_search_with_score(
+        query = query,
+        k = top_k*2,
+        search_type="script_scoring",
+        pre_filter = boolean_filter
+    )            
 ```
 
 ## 리소스 정리하기 
