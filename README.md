@@ -1177,7 +1177,7 @@ def generate_node(state: State):
 
 [Delta Corp](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Delta%20Corp.md)
 
-[An Trung Tin Shipping](https://github.com/kyopark2014/ocean-agent/blob/main/contents/An%20Trung%20Tin%20Shipping.md)
+[An Trung Tin]()
 
 [Alpha Bulkers Shipmanagement](https://github.com/kyopark2014/ocean-agent/blob/main/contents/Alpha%20Bulkers%20Shipmanagement.md)
 
@@ -1193,10 +1193,7 @@ OpenSearch를 활용하여 RAG를 생성하고, 기업 정보를 저장하여 �
 
 ### 검색 문서의 제한
 
-ocean agent로 수행시 검색하려는 회사명을 정확하게 넣지 않으면 가장 가까운 이름을 가지는 문서를 가지고 수행을 합니다. 아래와 같이 "Polaris Shipping"로 검색시에 유사한 Delta Shipping이 참고 되고 있습니다. 이를 명확히하려면 검색시 match 옵션을 변경하면 됩니다.
-
-<img width="523" alt="image" src="https://github.com/user-attachments/assets/49fcc085-af4e-4559-b302-e606c5c22de8">
-
+"Polaris Shipping"을 검색하면 "Delta Corp Shipping"이 유사한 문서로 검색이 될 수 있습니다. 이 경우에 문장의 앞부분에 요약이 contextual retrieval로 제공됨으로서 문제가 발생할 가능성이 낮아지지만, 유사한 이름을 가지는 문서들이 같이 검색이 되면 결과에 영향을 미칠 수 있습니다. 만약 문제가 되는 경우가 발생하면 검색을 match에서 term으로 변경하여야 합니다. 만약 term으로 지정하면 검색시 회사명이 full name으로 정확하게 입력되어야 합니다.
 
 
 ## 리소스 정리하기 
