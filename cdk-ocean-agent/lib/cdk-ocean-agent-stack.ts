@@ -26,7 +26,7 @@ const debug = false;
 const stage = 'dev';
 const s3_prefix = 'docs';
 const enableParallelSummary = 'false';
-const enalbeParentDocumentRetrival = 'true';
+const enableParentDocumentRetrival = 'true';
 const projectName = `ocean-agent`; 
 const bucketName = `storage-for-${projectName}-${accountId}-${region}`; 
 
@@ -657,7 +657,7 @@ export class CdkOceanAgentStack extends cdk.Stack {
         LLM_embedding: JSON.stringify(LLM_embedding),
         projectName: projectName,
         vectorIndexName: vectorIndexName,
-        enalbeParentDocumentRetrival: enalbeParentDocumentRetrival
+        enableParentDocumentRetrival: enableParentDocumentRetrival
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
@@ -777,7 +777,6 @@ export class CdkOceanAgentStack extends cdk.Stack {
           s3_bucket: s3Bucket.bucketName,
           s3_prefix: s3_prefix,
           enableParallelSummary: enableParallelSummary,
-          enalbeParentDocumentRetrival: enalbeParentDocumentRetrival,      
           opensearch_account: opensearch_account,
           opensearch_passwd: opensearch_passwd,    
           opensearch_url: opensearch_url,
