@@ -1,4 +1,4 @@
-# OpenSearch Index 조회 Error
+# OpenSearch Index 조회 Error
 
 [AWS Opensearch API Error Solutions with FGAC](https://medium.com/@jung2cloud/aws-opensearch-indices-security-exception-reason-no-permissions-403-errors-solutions-b5e4580391c)와 같이 indices에 대한 권한을 부여합니다.
 
