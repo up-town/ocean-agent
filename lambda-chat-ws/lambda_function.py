@@ -2201,6 +2201,7 @@ def run_agent_ocean(connectionId, requestId, query):
 
     output = app.invoke(inputs, config)   
     print('output: ', output)
+    print('reference_docs: ', reference_docs)
     
     final_answer = get_final_answer(output['drafts'], subject_company)
     
