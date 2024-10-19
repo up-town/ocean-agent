@@ -1185,6 +1185,19 @@ def generate_node(state: State):
 
 OpenSearch를 활용하여 RAG를 생성하고, 기업 정보를 저장하여 분석할 수 있었습니다. 또한 Agentic RAG를 구성하여 RAG뿐 아니라 일반 대화와 웹검색을 구현할 수 있습니다. 여기서는 인프라를 효율적으로 관리하기 위하여 AWS CDK로 OpenSearch를 설치하고 유지보수 및 변화하는 트래픽 처리에 유용한 서버리스 서비스 중심으로 시스템을 구성하였습니다. 
 
+## 이슈 사항
+
+### Hallucination
+
+원본 문서와 생성된 문서를 비교하면서 Hallucination 확인이 필요합니다. Anthropic Sonnet의 기본 정보가 참조되는 케이스가 있으므로, Hallucination이 문제가 될때는 prompt로 좀더 강한 제한이 필요할 수 있습니다.
+
+### 검색 문서의 제한
+
+ocean agent로 수행시 검색하려는 회사명을 정확하게 넣지 않으면 가장 가까운 이름을 가지는 문서를 가지고 수행을 합니다. 아래와 같이 "Polaris Shipping"로 검색시에 유사한 Delta Shipping이 참고 되고 있습니다. 이를 명확히하려면 검색시 match 옵션을 변경하면 됩니다.
+
+<img width="523" alt="image" src="https://github.com/user-attachments/assets/49fcc085-af4e-4559-b302-e606c5c22de8">
+
+
 
 ## 리소스 정리하기 
 
