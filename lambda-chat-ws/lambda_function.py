@@ -2138,6 +2138,8 @@ def buildOceanWorkflow():
     return workflow.compile()
 
 def get_final_answer(drafts, subject_company):
+    global reference_docs
+    
     final_doc = ""
     for i, draft in enumerate(drafts):
         print(f"{i}: {draft}")
