@@ -47,7 +47,7 @@ debugMessageMode = os.environ.get('debugMessageMode', 'false')
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
 opensearch_url = os.environ.get('opensearch_url')
-enalbeParentDocumentRetrival = os.environ.get('enalbeParentDocumentRetrival')
+enableParentDocumentRetrival = os.environ.get('enableParentDocumentRetrival')
 vectorIndexName = os.environ.get('vectorIndexName')
 index_name = vectorIndexName
 
@@ -794,7 +794,7 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
     )  
     
-    if enalbeParentDocumentRetrival == 'true': # parent/child chunking
+    if enableParentDocumentRetrival == 'true': # parent/child chunking
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, text, top_k)
                         
         for i, document in enumerate(relevant_documents):
@@ -1551,7 +1551,7 @@ def search_by_opensearch(keyword: str) -> str:
     
     top_k = 2    
     relevant_docs = [] 
-    if enalbeParentDocumentRetrival == 'true': # parent/child chunking
+    if enableParentDocumentRetrival == 'true': # parent/child chunking
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, keyword, top_k)
                         
         for i, document in enumerate(relevant_documents):
@@ -1657,7 +1657,6 @@ def run_agent_executor(connectionId, requestId, query):
         # print('(should_continue) messages: ', messages)
         
         last_message = messages[-1]
-        print('(should_continue) last_message: ', last_message)
                 
         if not last_message.tool_calls:
             next = "end"
@@ -1667,8 +1666,11 @@ def run_agent_executor(connectionId, requestId, query):
         print(f"should_continue response: {next}")
         return next
 
-    def call_model(state: State):
+    def call_model(state: State, config):
         print("###### call_model ######")
+        
+        update_state_message("thinking...", config)
+        
         # print('state: ', state["messages"])
         
         if isKorean(state["messages"][0].content)==True:
@@ -1695,6 +1697,13 @@ def run_agent_executor(connectionId, requestId, query):
             
         response = chain.invoke(state["messages"])
         print('call_model response: ', response.tool_calls)
+        
+        # state messag
+        if response.tool_calls:
+            toolinfo = response.tool_calls[-1]            
+            if toolinfo['type'] == 'tool_call':
+                print('tool name: ', toolinfo['name'])                    
+                update_state_message(f'calling... {toolinfo['name']}', config)
         
         return {"messages": [response]}
 
@@ -1857,7 +1866,7 @@ def retrieve(query: str, subject_company: str):
         http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
     )  
     
-    if enalbeParentDocumentRetrival == 'true': # parent/child chunking
+    if enableParentDocumentRetrival == 'true': # parent/child chunking
         relevant_documents = get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company)
                         
         for i, document in enumerate(relevant_documents):
@@ -1955,9 +1964,11 @@ def retrieve_for_parallel_processing(sub_queries, subject_company):
           
     return relevant_docs 
 
-def plan_node(state: State):
+def plan_node(state: State, config):
     print('###### plan_node ######')
     subject_company = state["subject_company"]    
+    
+    update_state_message('planning...', config)
     
     planning_steps = [
         "1. 회사 소개",
