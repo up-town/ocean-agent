@@ -2210,7 +2210,7 @@ def run_agent_ocean(connectionId, requestId, query):
     reference_docs = output['references']
     print('reference_docs: ', reference_docs)
     
-    final_answer = get_final_answer(output['drafts'], subject_company)
+    final_answer = get_final_answer(output['drafts'], subject_company, output['references'])
     
     return final_answer
 
