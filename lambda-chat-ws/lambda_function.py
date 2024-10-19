@@ -944,6 +944,7 @@ def get_references_for_html(docs):
     nameList = []
     cnt = 1
     for i, doc in enumerate(docs):
+        print(f"reference {i}: doc")
         page = ""
         if "page" in doc.metadata:
             page = doc.metadata['page']
@@ -2164,6 +2165,7 @@ def get_final_answer(drafts, subject_company):
     html_key = 'markdown/'+f"{subject_company}.html"
         
     reference = []
+    print('reference_docs: ', reference_docs)
     if reference_docs:
         reference = get_references_for_html(reference_docs)
         
@@ -2201,7 +2203,7 @@ def run_agent_ocean(connectionId, requestId, query):
     }
 
     output = app.invoke(inputs, config)   
-    print('output: ', output)
+    # print('output: ', output)
     
     reference_docs = output['references']
     print('reference_docs: ', reference_docs)
@@ -2577,7 +2579,7 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
     }
 
     output = app.invoke(inputs, config)   
-    print('output: ', output)
+    # print('output: ', output)
     
     reference_docs = output['references']
     print('reference_docs: ', reference_docs)
