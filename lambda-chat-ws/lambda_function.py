@@ -902,6 +902,9 @@ def get_references(docs):
         if "name" in doc.metadata:
             name = doc.metadata['name']
             #print('name: ', name)     
+        pos = name.rfind('/')
+        name = name[pos+1:]
+        print(f"name: {name}")
            
         sourceType = ""
         if "from" in doc.metadata:
@@ -2164,12 +2167,12 @@ def get_final_answer(drafts, subject_company, references):
     # html file
     html_key = 'markdown/'+f"{subject_company}.html"
         
-    reference = ""
+    html_reference = ""
     print('references: ', references)
     if references:
-        reference = get_references_for_html(references)
+        html_reference = get_references_for_html(references)
         
-    html_body = markdown_to_html(markdown_body, reference)
+    html_body = markdown_to_html(markdown_body, html_reference)
     print('html_body: ', html_body)
         
     s3_client = boto3.client('s3')  
@@ -2185,8 +2188,11 @@ def get_final_answer(drafts, subject_company, references):
     print('html_url: ', html_url)
     
     final_answer = final_doc+f"\n<a href={html_url} target=_blank>[미리보기 링크]</a>\n<a href={markdown_url} download=\"{subject_company}.md\">[다운로드 링크]</a>"    
+    
+    if references:
+        reference = get_references(references)
 
-    return final_answer
+    return final_answer+reference
             
 def run_agent_ocean(connectionId, requestId, query):
     subject_company = query
@@ -2204,9 +2210,6 @@ def run_agent_ocean(connectionId, requestId, query):
 
     output = app.invoke(inputs, config)   
     # print('output: ', output)
-    
-    reference_docs = output['references']
-    print('reference_docs: ', reference_docs)
     
     final_answer = get_final_answer(output['drafts'], subject_company, output['references'])
     
@@ -2562,8 +2565,6 @@ def buildPlanAndExecuteOceanWorkflow():
     return workflow.compile()
     
 def run_agent_ocean_reflection(connectionId, requestId, query):
-    global reference_docs
-    
     subject_company = query
     
     isTyping(connectionId, requestId, "")
@@ -2580,9 +2581,6 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
 
     output = app.invoke(inputs, config)   
     # print('output: ', output)
-    
-    reference_docs = output['references']
-    print('reference_docs: ', reference_docs)
     
     final_answer = get_final_answer(output['revised_drafts'], subject_company, output['references'])
     
@@ -2691,14 +2689,23 @@ def getResponse(connectionId, jsonBody):
                 
                 elif convType == 'rag-opensearch':   # RAG - Vector
                     msg = get_answer_using_opensearch(chat, text, connectionId, requestId)
+                    
+                    if reference_docs:
+                        reference = get_references(reference_docs)
                 
                 elif convType == 'agent-executor':
                     msg = run_agent_executor(connectionId, requestId, text)
+                    
+                    if reference_docs:
+                        reference = get_references(reference_docs)
                 
                 elif convType == 'agent-executor-chat':
                     revised_question = revise_question(connectionId, requestId, chat, text)     
                     print('revised_question: ', revised_question)  
                     msg = run_agent_executor(connectionId, requestId, revised_question)
+                    
+                    if reference_docs:
+                        reference = get_references(reference_docs)
                     
                 elif convType == "agent-ocean":
                     msg = run_agent_ocean(connectionId, requestId, text)
@@ -2708,10 +2715,6 @@ def getResponse(connectionId, jsonBody):
                                     
                 memory_chain.chat_memory.add_user_message(text)
                 memory_chain.chat_memory.add_ai_message(msg)
-                
-                print('reference_docs: ', reference_docs)
-                if reference_docs:
-                    reference = get_references(reference_docs)
                 
         elif type == 'document':
             isTyping(connectionId, requestId, "")
