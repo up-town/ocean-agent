@@ -2655,8 +2655,6 @@ def getResponse(connectionId, jsonBody):
         allowTime = getAllowTime()
         load_chat_history(userId, allowTime)
     
-    start = int(time.time())    
-
     msg = ""
     reference = ""
     
@@ -2826,9 +2824,6 @@ def getResponse(connectionId, jsonBody):
         sendResultMessage(connectionId, requestId, msg+reference)
         # print('msg+reference: ', msg+reference)    
                 
-        elapsed_time = int(time.time()) - start
-        print("total run time(sec): ", elapsed_time)
-        
         print('msg: ', msg)
 
         item = {
@@ -2876,10 +2871,15 @@ def lambda_handler(event, context):
                 print('request body: ', json.dumps(jsonBody))
 
                 requestId  = jsonBody['request_id']
+                
+                start = int(time.time())  
                 try:
                     msg, reference = getResponse(connectionId, jsonBody)
 
                     print('msg+reference: ', msg+reference)
+                    
+                    elapsed_time = int(time.time()) - start
+                    print("total run time(sec): ", elapsed_time)
                                         
                 except Exception:
                     err_msg = traceback.format_exc()
