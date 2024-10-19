@@ -5,7 +5,7 @@
     <img alt="License" src="https://img.shields.io/badge/LICENSE-MIT-green">
 </p>
 
-여기에서는 기업의 정보를 PDF 문서로 받아서 원하는 목차로 정리하는 업무지원 프로세스에 대해 설명합니다. PDF 문서를 활용하기 위해서는 문서의 주제와 생성일에 대한 정보를 추출해 문서 chunk의 metadata로 등록하는 절차가 필요합니다. 또한 이때의 메타정보를 기준으로 문서를 검색하기 위해서는 RAG의 지식저장소가 필요합니다. 그리고 얻어진 문서의 내용을 사용자가 원하는 포맷으로 보여줄수 있도록 markdown로 정리하고 html로 공유할 수 있어야 합니다. 여기서는 PDF에서 정보의 추출 및 메타정보로 등록, RAG를 이용한 문서의 검색, markdown형태로 문서를 공유하는 일련의 과정을 설명합니다.
+여기에서는 PDF로 된 기업 정보를 원하는 형태의 보고서로 정리하는 agentic workflow에 대해 설명합니다. 여러 종류의 PDF에서 특정 문서를 활용해 데이터를 분석하려면 1/문서의 metadata에 관련 정보를 추가해 활용하거나, 2/ contextual embedding을 이용하여 chunk에 추가 정보를 넣어서 활용하는 방안이 있습니다. 여기에서는 문서에서 기업명과 문서생성일과 같은 정보를 metadata에 추출하는 방법과 prompt를 이용해 chunk의 내용을 요약하는 방법을 모두 활용하여 문서에서 필요한 정보를 충분히 추출하고자 합니다. 보고서의 생성은 plan and execute 패턴으로 목차와 초안을 작성하고 reflection을 이용해 충분한 context를 제공합니다. reflection은 각 문단에서 주요 keyword를 추춣하여 RAG를 통해 얻어진 문서를 활용합니다. 문서에는 텍스트뿐 아니라 이미지나 표가 있을 수 있으므로, multimodal을 이용해 그림이나 표로부터 충분한 정보를 가져옵니다. 그리고 RAG 검색의 정확도를 높이면서 충분한 context를 제공할 수 있도록 계층적 chunking을 활용합니다. 생성된 보고서에 대해 사용자의 가독성을 높이기 위해 여기서는 markdown format을 활용하고, html에 markdown 문서를 포함하여 외부로 공유할 URL을 생성합니다. 이 보고서는 pdf와 같은 방식으로 변환하여 별도 문서로도 관리할 수 있습니다. 
 
 기업 정보 요약을 위한 인프라는 Amazon serverless architecture 패턴을 따라 아래와 같이 설계되었습니다. 이러한 architecture는 변화하는 트래픽에 적절히 대응하고 비용을 최적화할 수 있습니다. 또한 AWS CDK를 이용해 편리하게 배포할 수 있습니다. 
 
@@ -480,7 +480,7 @@ def extract_images_from_pdf(reader, key):
     return extracted_image_files
 ```
 
-읽어온 문서에서 추출된 텍스트와 테이블은 Document 타입으로 모으고 벡터저장소인 OpenSearch에 추가합니다.
+읽어온 문서에서 추출된 텍스트와 테이블은 Document 타입으로 모으고 벡터 저장소(vectorstore)인 OpenSearch에 추가합니다.
 
 ```python
 def store_document_for_opensearch(file_type, key):
@@ -623,7 +623,7 @@ def add_to_opensearch(docs, key):
 
 ### Contextual Retrieval 
 
-[Contextual Retrieval](https://www.anthropic.com/news/contextual-retrieval)와 같이 각 chunk의 설명을 추가하면, 검색의 정확도를 높일 수 있습니다. 상세한 코드는 [lambda_function.py](./lambda-document-manager/lambda_function.py)를 참조합니다.
+[Contextual Retrieval](https://www.anthropic.com/news/contextual-retrieval)와 같이 contextual embedding을 이용하여 chunk에 대한 설명을 추가하면, 검색의 정확도를 높일 수 있습니다. 또한 BM25(keyword) 검색은 OpenSearch의 hybrid 검색을 통해 구현할 수 있습니다. 상세한 코드는 [lambda_function.py](./lambda-document-manager/lambda_function.py)를 참조합니다.
 
 ```python
 def get_contexual_docs(whole_doc, splitted_docs):
