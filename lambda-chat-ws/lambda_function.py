@@ -2137,7 +2137,7 @@ def buildOceanWorkflow():
     
     return workflow.compile()
 
-def get_final_answer(drafts, subject_company):
+def get_final_answer(drafts, subject_company, references):
     global reference_docs
     
     final_doc = ""
@@ -2166,10 +2166,10 @@ def get_final_answer(drafts, subject_company):
     # html file
     html_key = 'markdown/'+f"{subject_company}.html"
         
-    reference = []
-    print('reference_docs: ', reference_docs)
-    if reference_docs:
-        reference = get_references_for_html(reference_docs)
+    reference = ""
+    print('references: ', references)
+    if references:
+        reference = get_references_for_html(references)
         
     html_body = markdown_to_html(markdown_body, reference)
     print('html_body: ', html_body)
@@ -2586,7 +2586,7 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
     reference_docs = output['references']
     print('reference_docs: ', reference_docs)
     
-    final_answer = get_final_answer(output['revised_drafts'], subject_company)
+    final_answer = get_final_answer(output['revised_drafts'], subject_company, output['references'])
     
     return final_answer
     
