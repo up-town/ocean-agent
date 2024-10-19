@@ -621,7 +621,7 @@ def add_to_opensearch(docs, key):
     return ids
 ```
 
-### Contextual Retrieval 
+### Contextual Embedding 
 
 [Contextual Retrieval](https://www.anthropic.com/news/contextual-retrieval)와 같이 contextual embedding을 이용하여 chunk에 대한 설명을 추가하면, 검색의 정확도를 높일 수 있습니다. 또한 BM25(keyword) 검색은 OpenSearch의 hybrid 검색을 통해 구현할 수 있습니다. 상세한 코드는 [lambda_function.py](./lambda-document-manager/lambda_function.py)를 참조합니다.
 
@@ -765,8 +765,6 @@ including its contact details, company type, status, sector, place and date of i
 This information is part of the overall assessment and rating of Suzano SA presented in the document.
 ```
 
-
-
 ### 이미지에서 텍스트 추출
 
 이미지는 LLM에서 처리할 수 있도록 resize후에 텍스트를 추출합니다. 이때 LLM이 문서의 내용을 추출할 수 있도록 회사명등을 이용해 정보를 제공합니다.
@@ -846,8 +844,6 @@ def store_image_for_opensearch(key, page, subject_company, rating_date):
         return []
 ```
 
-
-
 ### 문서 생성
 
 문서의 목차와 이에 따른 작성과정은 [plan and execute 패턴](https://github.com/kyopark2014/writing-agent?tab=readme-ov-file#plan-and-execute)과 [reflection](https://github.com/kyopark2014/writing-agent/blob/main/README.md#reflection)을 활용합니다.
@@ -902,41 +898,102 @@ def buildReflection():
     return workflow.compile()
 ```
 
-검색은 parallel_retriever를 이용합니다.
+보고서 plan은 아래와 같이 미리 정의한 목차와 keyword를 이용합니다.
 
 ```python
-def parallel_retriever(state: State):
-    print('###### parallel_retriever ######')
+def plan_node(state: State):
+    print('###### plan_node ######')
     subject_company = state["subject_company"]    
-    planning_steps = state["planning_steps"]
-    print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
     
-    relevant_contexts = []    
+    planning_steps = [
+        "1. 회사 소개",
+        "2. 주요 영업 활동",
+        "3. 재무 현황",
+        "4. 선대 현황",
+        "5. 종합 평가"
+    ]
     
-    sub_queries = state["sub_queries"]
-    
-    for i, step in enumerate(planning_steps):
-        print(f"{i}: {step}")
-
-        context = ""        
-        for q in sub_queries[i]:
-            docs = retrieve(q, subject_company)
-            
-            print(f"---> q: {sub_queries[i]}, docs: {docs}")
-            
-            for doc in docs:            
-                context += doc.page_content
-            
-        relevant_contexts.append(context)
+    sub_queries = [
+        [
+            "establish", 
+            "location", 
+            "management", 
+            "affiliated"
+        ],
+        [
+            "cargo", 
+            "route", 
+            "owned/chartered", 
+            "strategy"
+        ],
+        [
+            "financial performance", 
+            "route", 
+            "financial risk",
+            "payment"
+        ],
+        [
+            "fleet"
+        ],
+        [
+            "rating",
+            "assessment" 
+        ]        
+    ]
         
     return {
         "subject_company": subject_company,
         "planning_steps": planning_steps,
-        "relevant_contexts": relevant_contexts
+        "sub_queries": sub_queries
     }
 ```
 
-이때 RAG 검색은 아래와 같습니다.
+검색은 sub_query를 이용해 retrieve 노드가 RAG를 조회하는 방법으로 수행합니다. 속도 향상을 위하여 multi region을 이용한 병렬처리를 적용하였습니다. 
+
+```python
+def retrieve_node(state: State):
+    print('###### retrieve_node ######')
+    subject_company = state["subject_company"]    
+    planning_steps = state["planning_steps"]
+    print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
+    
+    relevant_contexts = []        
+    references = []
+    sub_queries = state["sub_queries"]
+    
+    for i, step in enumerate(planning_steps):
+        print(f"{i}: {step}")
+        
+        contents = ""    
+        if multi_region == 'enable': 
+            relevant_docs = retrieve_for_parallel_processing(sub_queries[i], subject_company)
+            for doc in relevant_docs:
+                contents += doc.page_content
+            
+            references += relevant_docs
+        else:
+                
+            for q in sub_queries[i]:
+                docs = retrieve(q, subject_company)
+                
+                print(f"---> q: {sub_queries[i]}, docs: {docs}")                
+                for doc in docs:            
+                    contents += doc.page_content
+                
+                references += docs
+                                
+        relevant_contexts.append(contents)
+        
+    return {
+        "subject_company": subject_company,
+        "planning_steps": planning_steps,
+        "relevant_contexts": relevant_contexts,
+        "references": references
+    }
+
+```
+
+이때 RAG 검색은 아래와 같습니다. 계층적/고정 chunking을 모두 구현하였지만, 검색 성능 향상을 위해 계층적 chunking 방식을 활용합니다. 또한 검색할 문서는 검색 용어와 가장 가까운(matching) 문서를 찾아서 이용합니다. 
 
 ```python
 def retrieve(query: str, subject_company: str):
