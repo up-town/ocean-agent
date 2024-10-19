@@ -1840,7 +1840,7 @@ def retrieve(query: str, subject_company: str):
         relevant_documents = get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, query, top_k, subject_company)
                         
         for i, document in enumerate(relevant_documents):
-            print(f'## Document(opensearch-vector) {i+1}: {document}')
+            # print(f'## Document(opensearch-vector) {i+1}: {document}')
             
             parent_doc_id = document[0].metadata['parent_doc_id']
             doc_level = document[0].metadata['doc_level']
@@ -2137,8 +2137,6 @@ def buildOceanWorkflow():
     return workflow.compile()
 
 def get_final_answer(drafts, subject_company):
-    global reference_docs
-    
     final_doc = ""
     for i, draft in enumerate(drafts):
         print(f"{i}: {draft}")
@@ -2204,6 +2202,8 @@ def run_agent_ocean(connectionId, requestId, query):
 
     output = app.invoke(inputs, config)   
     print('output: ', output)
+    
+    reference_docs = output['references']
     print('reference_docs: ', reference_docs)
     
     final_answer = get_final_answer(output['drafts'], subject_company)
