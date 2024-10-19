@@ -1730,6 +1730,7 @@ class State(TypedDict):
     relevant_contexts : list[str]
     drafts : List[str]
     revised_drafts: Annotated[list, operator.add]  # for reflection
+    references: List[str]
     
 def markdown_to_html(body, reference):
     body = body + f"\n\n### 참고자료\n\n\n"
@@ -1818,7 +1819,6 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
         
 def retrieve(query: str, subject_company: str):
     print(f'###### retrieve: {query} ######')
-    global reference_docs
     
     top_k = 2
     docs = []
@@ -1898,9 +1898,6 @@ def retrieve(query: str, subject_company: str):
 
     filtered_docs = check_duplication(filtered_docs) # check duplication
             
-    reference_docs += filtered_docs # add to reference
-    print('reference_docs: ', reference_docs)
-    
     return filtered_docs
 
 def parallel_retrieve(conn, q, subject_company):
@@ -1908,18 +1905,15 @@ def parallel_retrieve(conn, q, subject_company):
     
     docs = retrieve(q, subject_company)                
     print(f"---> q: {q}, docs: {docs}")
-                    
-    for doc in docs:
-        context += doc.page_content
-    
-    conn.send(context)    
+                        
+    conn.send(docs)    
     conn.close()
 
 def retrieve_for_parallel_processing(sub_queries, subject_company):
     processes = []
     parent_connections = []
         
-    contents = "" 
+    relevant_docs = []
     for idx, q in enumerate(sub_queries):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
@@ -1931,14 +1925,14 @@ def retrieve_for_parallel_processing(sub_queries, subject_company):
         process.start()
                 
     for parent_conn in parent_connections:
-        content = parent_conn.recv()
+        docs = parent_conn.recv()
         
-        contents += content
+        relevant_docs += docs
 
     for process in processes:
         process.join()
           
-    return contents 
+    return relevant_docs 
 
 def plan_node(state: State):
     print('###### plan_node ######')
@@ -1993,14 +1987,21 @@ def retrieve_node(state: State):
     print(f"subject_company: {subject_company}, planning_steps: {planning_steps}")
     
     relevant_contexts = []        
+    references = []
     sub_queries = state["sub_queries"]
     
     for i, step in enumerate(planning_steps):
         print(f"{i}: {step}")
+        
+        contents = ""    
         if multi_region == 'enable': 
-            contents = retrieve_for_parallel_processing(sub_queries[i], subject_company)
+            relevant_docs = retrieve_for_parallel_processing(sub_queries[i], subject_company)
+            for doc in relevant_docs:
+                contents += doc.page_content
+            
+            references += relevant_docs
         else:
-            contents = ""        
+                
             for q in sub_queries[i]:
                 docs = retrieve(q, subject_company)
                 
@@ -2008,12 +2009,15 @@ def retrieve_node(state: State):
                 for doc in docs:            
                     contents += doc.page_content
                 
+                references += docs
+                                
         relevant_contexts.append(contents)
         
     return {
         "subject_company": subject_company,
         "planning_steps": planning_steps,
-        "relevant_contexts": relevant_contexts
+        "relevant_contexts": relevant_contexts,
+        "references": references
     }
 
 def generate_node(state: State):    
@@ -2160,8 +2164,7 @@ def get_final_answer(drafts, subject_company):
         
     # html file
     html_key = 'markdown/'+f"{subject_company}.html"
-    
-    print('reference_docs: ', reference_docs)
+        
     reference = []
     if reference_docs:
         reference = get_references_for_html(reference_docs)
@@ -2557,6 +2560,8 @@ def buildPlanAndExecuteOceanWorkflow():
     return workflow.compile()
     
 def run_agent_ocean_reflection(connectionId, requestId, query):
+    global reference_docs
+    
     subject_company = query
     
     isTyping(connectionId, requestId, "")
@@ -2573,6 +2578,9 @@ def run_agent_ocean_reflection(connectionId, requestId, query):
 
     output = app.invoke(inputs, config)   
     print('output: ', output)
+    
+    reference_docs = output['references']
+    print('reference_docs: ', reference_docs)
     
     final_answer = get_final_answer(output['revised_drafts'], subject_company)
     
