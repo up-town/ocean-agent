@@ -1931,8 +1931,6 @@ def retrieve(query: str, subject_company: str):
     return filtered_docs
 
 def parallel_retrieve(conn, q, subject_company):
-    context = ""    
-    
     docs = retrieve(q, subject_company)                
     print(f"---> q: {q}, docs: {docs}")
                         
@@ -2025,6 +2023,8 @@ def retrieve_node(state: State, config):
     sub_queries = state["sub_queries"]
     
     for i, step in enumerate(planning_steps):
+        update_state_message(f"retrieving... (step: {i+1}/{len(planning_steps)})", config)
+        
         print(f"{i}: {step}")
         
         contents = ""    
