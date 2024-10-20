@@ -2110,6 +2110,8 @@ def generate_node(state: State, config):
     drafts = []
     
     for i, step in enumerate(planning_steps):
+        update_state_message(f"executing... (step: {i+1}/{len(planning_steps)})", config)
+        
         print(f"{i}: {step}")
         context = state["relevant_contexts"][i]
         
@@ -2289,12 +2291,15 @@ class ResearchKor(BaseModel):
         description="현재 글과 관련된 3개 이내의 검색어"
     )
 
-def reflect_node(state: ReflectionState):
+def reflect_node(state: ReflectionState, config):
     print("###### reflect ######")
     draft = state['draft']
     print('draft: ', draft)
     subject_company = state['subject_company']
     print('subject_company: ', subject_company)
+    
+    idx = config.get("configurable", {}).get("idx")
+    update_state_message(f"reflecting... (search_queries-{idx})", config)
     
     reflection = []
     search_queries = []
@@ -2358,7 +2363,7 @@ def reflect_node(state: ReflectionState):
         "subject_company": subject_company
     }
 
-def revise_draft(state: ReflectionState):   
+def revise_draft(state: ReflectionState, config):   
     print("###### revise_draft ######")
         
     draft = state['draft']
@@ -2367,6 +2372,9 @@ def revise_draft(state: ReflectionState):
     print('draft: ', draft)
     print('search_queries: ', search_queries)
     print('reflection: ', reflection)
+    
+    idx = config.get("configurable", {}).get("idx")
+    update_state_message(f"reflecting... (retrieve-{idx})", config)
         
     if isKorean(draft):
         revise_template = (
@@ -2435,6 +2443,8 @@ def revise_draft(state: ReflectionState):
         for d in filtered_docs:
             content.append(d.page_content)        
     # print('content: ', content)
+    
+    update_state_message(f"reflecting... (generate-{idx})", config)
 
     chat = get_chat()
     reflect = revise_prompt | chat
@@ -2500,16 +2510,12 @@ def buildReflection():
         
     return workflow.compile()
 
-def reflect_draft(conn, reflection_app, idx, draft, subject_company):     
+def reflect_draft(conn, reflection_app, config, idx, draft, subject_company):     
     inputs = {
         "draft": draft,
         "subject_company": subject_company,
         "revision_number": 0
-    }    
-    config = {
-        "recursion_limit": 50,
-        "max_revisions": MAX_REVISIONS
-    }
+    }        
     output = reflection_app.invoke(inputs, config)
         
     result = {
@@ -2520,19 +2526,31 @@ def reflect_draft(conn, reflection_app, idx, draft, subject_company):
     conn.send(result)    
     conn.close()
 
-def reflect_drafts_using_parallel_processing(drafts, subject_company):
+def reflect_drafts_using_parallel_processing(drafts, config, subject_company):
     revised_drafts = drafts
         
     processes = []
     parent_connections = []
         
     reflection_app = buildReflection()
+    
+    requestId = config.get("configurable", {}).get("requestId", "")
+    print('requestId: ', requestId)
+    connectionId = config.get("configurable", {}).get("connectionId", "")
+    print('connectionId: ', connectionId)
                 
     for idx, draft in enumerate(drafts):
         parent_conn, child_conn = Pipe()
         parent_connections.append(parent_conn)
             
-        process = Process(target=reflect_draft, args=(child_conn, reflection_app, idx, draft, subject_company))
+        app_config = {
+            "recursion_limit": 50,
+            "max_revisions": MAX_REVISIONS,
+            "requestId":requestId,
+            "connectionId": connectionId,
+            "idx": idx
+        }
+        process = Process(target=reflect_draft, args=(child_conn, reflection_app, app_config, idx, draft, subject_company))
         processes.append(process)
             
     for process in processes:
@@ -2561,7 +2579,7 @@ def revise_answers(state: State, config):
     
     # reflection
     if multi_region == 'enable':  # parallel processing
-        revised_drafts = reflect_drafts_using_parallel_processing(drafts, subject_company)
+        revised_drafts = reflect_drafts_using_parallel_processing(drafts, config, subject_company)
     else:
         revised_drafts = []
         reflection_app = buildReflection()
@@ -2570,11 +2588,7 @@ def revise_answers(state: State, config):
             inputs = {
                 "draft": draft,
                 "subject_company": subject_company
-            }    
-            config = {
-                "recursion_limit": 50,
-                "max_revisions": MAX_REVISIONS
-            }
+            }                
             output = reflection_app.invoke(inputs, config)
             
             revised_drafts.append(output['revised_draft'])
