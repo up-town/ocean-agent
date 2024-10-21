@@ -656,6 +656,8 @@ def print_doc(i, doc):
     print(f"{i}: {text}, metadata:{doc.metadata}")
 
 def query_using_RAG_context(connectionId, requestId, chat, context, revised_question):    
+    isTyping(connectionId, requestId, "generating...")
+    
     if isKorean(revised_question)==True:
         system = (
             """다음의 <context> tag안의 참고자료를 이용하여 상황에 맞는 구체적인 세부 정보를 충분히 제공합니다. Assistant의 이름은 서연이고, 모르는 질문을 받으면 솔직히 모른다고 말합니다.
@@ -794,6 +796,8 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         http_auth=(opensearch_account, opensearch_passwd), # http_auth=awsauth,
     )  
     
+    isTyping(connectionId, requestId, "retrieving...")
+    
     if enableParentDocumentRetrival == 'true': # parent/child chunking
         relevant_documents = get_documents_from_opensearch(vectorstore_opensearch, text, top_k)
                         
@@ -842,6 +846,8 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
                 )
             )
 
+    isTyping(connectionId, requestId, "grading...")
+    
     filtered_docs = grade_documents(text, relevant_docs) # grading
     
     filtered_docs = check_duplication(filtered_docs) # check duplication
@@ -1055,6 +1061,8 @@ def revise_question(connectionId, requestId, chat, query):
     global history_length, token_counter_history    
     history_length = token_counter_history = 0
         
+    isTyping(connectionId, requestId, "revising question...")
+    
     if isKorean(query)==True :      
         system = (
             ""
@@ -2502,7 +2510,8 @@ def buildReflection():
         should_continue, 
         {
             "end": END, 
-            "continue": "reflect_node"}
+            "continue": "reflect_node"
+        }
     )
 
     # Add edges
@@ -2739,7 +2748,10 @@ def getResponse(connectionId, jsonBody):
                     msg = general_conversation(connectionId, requestId, chat, text)                  
                 
                 elif convType == 'rag-opensearch':   # RAG - Vector
-                    msg = get_answer_using_opensearch(chat, text, connectionId, requestId)
+                    revised_question = revise_question(connectionId, requestId, chat, text)     
+                    print('revised_question: ', revised_question)  
+                    
+                    msg = get_answer_using_opensearch(chat, revised_question, connectionId, requestId)
                     
                     if reference_docs:
                         reference = get_references(reference_docs)
