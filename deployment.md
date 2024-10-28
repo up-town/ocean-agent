@@ -30,6 +30,12 @@ Instance Type은 "m5.large"를 선택하고, Key pair는 "Proceeding without a k
 
 ![noname](https://github.com/user-attachments/assets/84edf46d-0aa8-478c-8727-1301cf32f4db)
 
+이후 아래와 같이 instance를 선택하여 EC2 instance 화면으로 이동하거나, console에서 [EC-Instances](https://us-west-2.console.aws.amazon.com/ec2/home?region=us-west-2#Instances:)로 접속합니다. 
+
+![noname](https://github.com/user-attachments/assets/f5c82338-3e05-4c26-bdef-642c81f2c5d2)
+
+아래와 같이 instance에서 [Connect]를 선택하여 [Session Manager]로 접속합니다. 
+
 #### 관련 패키지 설치
 
 
