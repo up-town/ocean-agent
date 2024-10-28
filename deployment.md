@@ -6,9 +6,36 @@ LLM으로 Anthropic의 Claude 3을 사용하기 위하여, Amazon Bedrock의 us-
 
 ![image](https://github.com/user-attachments/assets/f259bb17-cbd4-4f9e-8025-6552953a5899)
 
+## 설치하기
+
+Cloud9이 Deprecated될 예정이므로 EC2를 사용하여 설치하는것을 추천 드립니다. 기존 계정의 경우에 Cloud9을 계속 사용할 수 있습니다.
 
 
-## CDK를 이용한 인프라 설치하기
+### EC2를 사용하는 경우
+
+여기서는 편의상 us-west-2 (Oregon) 리전을 사용합니다.
+
+
+#### EC2 생성
+
+[EC2 - LaunchInstances](https://us-west-2.console.aws.amazon.com/ec2/home?region=us-west-2#LaunchInstances:)에 접속하여 Name으로 "chatbot"이라고 입력합니다.
+
+![noname](https://github.com/user-attachments/assets/acdac538-ea1e-4b32-a7f8-efc2b0e34664)
+
+OS로 기본값인 "Amazon Linux"를 유지하고, Amazon Machine Image (AMI)도 기본값을 그대로 사용합니다.
+
+Instance Type은 "m5.large"를 선택하고, Key pair는 "Proceeding without a key pair"를 선택합니다. 
+
+[Configure storage]는 편의상 80G로 변경하고 [Launch instance]를 선택하여 EC2를 설치합니다. 
+
+![noname](https://github.com/user-attachments/assets/84edf46d-0aa8-478c-8727-1301cf32f4db)
+
+#### 관련 패키지 설치
+
+
+
+
+### Cloud9을 사용하는 경우
 
 여기서는 [AWS Cloud9](https://aws.amazon.com/ko/cloud9/)에서 [AWS CDK](https://aws.amazon.com/ko/cdk/)를 이용하여 인프라를 설치합니다. 
 
