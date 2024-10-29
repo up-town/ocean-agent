@@ -49,20 +49,6 @@ sudo service docker start
 sudo npm install -g aws-cdk --prefix /usr/local
 ```
 
-bootstraping을 수행합니다. 리전당 1회만 수행하면 됩니다.
-
-```text
-aws sts get-caller-identity --query Account --output text
-cdk bootstrap aws://[account-id]/us-west-2
-```
-
-소스를 다운로드 하고 설치를 수행합니다.
-
-```text
-git clone https://github.com/kyopark2014/ocean-agen
-cd ocean-agen/cdk-ocean-agent/ && npm install
-cdk deploy --require-approval never --all
-```
 
 ### Cloud9을 사용하는 경우
 
@@ -89,20 +75,21 @@ curl https://raw.githubusercontent.com/kyopark2014/technical-summary/main/resize
 chmod a+rx resize.sh && ./resize.sh 80
 ```
 
+### 소스 다운로드 및 설치 
 
-4) 소스를 다운로드합니다.
+1) 소스를 다운로드합니다.
 
 ```java
 git clone https://github.com/kyopark2014/ocean-agent
 ```
 
-5) cdk 폴더로 이동하여 필요한 라이브러리를 설치합니다.
+2) cdk 폴더로 이동하여 필요한 라이브러리를 설치합니다.
 
 ```java
 cd ocean-agent/cdk-ocean-agent/ && npm install
 ```
 
-7) CDK 사용을 위해 Boostraping을 수행합니다.
+3) CDK 사용을 위해 Boostraping을 수행합니다.
 
 아래 명령어로 Account ID를 확인합니다.
 
@@ -116,7 +103,7 @@ aws sts get-caller-identity --query Account --output text
 cdk bootstrap aws://[account-id]/us-west-2
 ```
 
-8) 아래 명령어로 인프라를 설치합니다.
+4) 아래 명령어로 인프라를 설치합니다.
 
 ```java
 cdk deploy --require-approval never --all
@@ -126,12 +113,12 @@ cdk deploy --require-approval never --all
 
 ![noname](https://github.com/user-attachments/assets/21488aac-9319-4f80-bc7f-c2c855a68ac9)
 
-9) Output의 HtmlUpdateCommend을 아래와 같이 복사하여 실행합니다.
+5) Output의 HtmlUpdateCommend을 아래와 같이 복사하여 실행합니다.
 
 ![noname](https://github.com/user-attachments/assets/f7971246-3b38-441e-935c-b1ebfd5b3be9)
 
     
-10) API에 대한 Credential을 획득하고 입력합니다.
+6) API에 대한 Credential을 획득하고 입력합니다.
 
 - 일반 검색을 위하여 [Tavily Search](https://app.tavily.com/sign-in)에 접속하여 가입 후 API Key를 발급합니다. 이것은 tvly-로 시작합니다.
 
@@ -147,4 +134,4 @@ Tavily의 경우 1000건/월을 허용하므로 여러 건의 credential을 사�
 
 Output의 WebUrlforstreamchatbot의 URL로 접속합니다. 만약 Credential을 입력 전에 URL을 접속을 했다면, Lambda를 재배포하거나 일정 시간후에 Lamba가 내려갈때까지 기다렸다가 재접속하여야 하므로, Credential들을 입력 후에 URL로 접속하는것이 좋습니다. 
 
-11) RAG를 사용하기를 원하는 경우에 Amazon Bedrock Knowledge Base를 [knowledge-base.md](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/knowledge-base.md)에 따라 설정합니다. 여기에서는 knowledge base의 이름으로 "aws-rag"을 사용하고 있습니다. knowledge_base_id를 구하기 위하여 knowledge base의 이름을 이용하고 있으므로, knowledge base의 이름을 변경할 경우에는 [cdk-writing-agent-stack.ts](./cdk-writing-agent/lib/cdk-writing-agent-stack.ts)에서 "knowledge_base_name"을 수정후에 재배포합니다.
+7) RAG를 사용하기를 원하는 경우에 Amazon Bedrock Knowledge Base를 [knowledge-base.md](https://github.com/kyopark2014/korean-chatbot-using-amazon-bedrock/blob/main/knowledge-base.md)에 따라 설정합니다. 여기에서는 knowledge base의 이름으로 "aws-rag"을 사용하고 있습니다. knowledge_base_id를 구하기 위하여 knowledge base의 이름을 이용하고 있으므로, knowledge base의 이름을 변경할 경우에는 [cdk-writing-agent-stack.ts](./cdk-writing-agent/lib/cdk-writing-agent-stack.ts)에서 "knowledge_base_name"을 수정후에 재배포합니다.
