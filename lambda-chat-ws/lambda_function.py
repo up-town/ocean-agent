@@ -59,7 +59,7 @@ selected_chat = 0
 selected_multimodal = 0
 selected_embedding = 0
 useEnhancedSearch = False
-enableHybridSearch = 'false'
+enableHybridSearch = os.environ.get('enableHybridSearch')
     
 multi_region_models = [   # claude sonnet 3.0
     {   
@@ -803,7 +803,7 @@ def lexical_search(query, top_k):
         body=query,
         index=index_name
     )
-    # print('lexical query result: ', json.dumps(response))
+    print('lexical query result: ', json.dumps(response))
         
     docs = []
     for i, document in enumerate(response['hits']['hits']):

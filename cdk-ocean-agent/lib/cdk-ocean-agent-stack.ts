@@ -657,7 +657,8 @@ export class CdkOceanAgentStack extends cdk.Stack {
         LLM_embedding: JSON.stringify(LLM_embedding),
         projectName: projectName,
         vectorIndexName: vectorIndexName,
-        enableParentDocumentRetrival: enableParentDocumentRetrival
+        enableParentDocumentRetrival: enableParentDocumentRetrival,
+        enableHybridSearch: enableHybridSearch
       }
     });     
     lambdaChatWebsocket.grantInvoke(new iam.ServicePrincipal('apigateway.amazonaws.com'));  
