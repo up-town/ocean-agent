@@ -715,32 +715,37 @@ export class CdkOceanAgentStack extends cdk.Stack {
 
     // S3 - Lambda(S3 event) - SQS(fifo) - Lambda(document)
     // DLQ
-    let dlq;
-    dlq = new sqs.Queue(this, 'DlqS3EventFifo', {
-      visibilityTimeout: cdk.Duration.seconds(600),
-      queueName: `dlq-s3-event-for-${projectName}.fifo`,  
-      fifo: true,
-      contentBasedDeduplication: false,
-      deliveryDelay: cdk.Duration.millis(0),
-      retentionPeriod: cdk.Duration.days(14),
-    });
-    
+    let dlq:any[] = [];
+    for(let i=0;i<LLM_for_multimodal.length;i++) {
+      dlq[i] = new sqs.Queue(this, 'DlqS3EventFifo'+i, {
+        visibilityTimeout: cdk.Duration.seconds(600),
+        queueName: `dlq-s3-event-for-${projectName}-${i}.fifo`,  
+        fifo: true,
+        contentBasedDeduplication: false,
+        deliveryDelay: cdk.Duration.millis(0),
+        retentionPeriod: cdk.Duration.days(14),
+      });
+    }
+
     // SQS for S3 event (fifo) 
-    let queueUrl;
-    const queue = new sqs.Queue(this, 'QueueS3EventFifo', {
-      visibilityTimeout: cdk.Duration.seconds(600),
-      queueName: `queue-s3-event-for-${projectName}.fifo`,  
-      fifo: true,
-      contentBasedDeduplication: false,
-      deliveryDelay: cdk.Duration.millis(0),
-      retentionPeriod: cdk.Duration.days(2),
-      deadLetterQueue: {
-        maxReceiveCount: 4,
-        queue: dlq
-      }
-    });
-    queueUrl = queue.queueUrl;
-    
+    let queueUrl:string[] = [];
+    let queue:any[] = [];
+    for(let i=0;i<LLM_for_multimodal.length;i++) {
+      queue[i] = new sqs.Queue(this, 'QueueS3EventFifo'+i, {
+        visibilityTimeout: cdk.Duration.seconds(600),
+        queueName: `queue-s3-event-for-${projectName}-${i}.fifo`,  
+        fifo: true,
+        contentBasedDeduplication: false,
+        deliveryDelay: cdk.Duration.millis(0),
+        retentionPeriod: cdk.Duration.days(2),
+        deadLetterQueue: {
+          maxReceiveCount: 4,
+          queue: dlq[i]
+        }
+      });
+      queueUrl.push(queue[i].queueUrl);
+    }
+
     // Lambda for s3 event manager
     const lambdaS3eventManager = new lambda.Function(this, `lambda-s3-event-manager-for-${projectName}`, {
       description: 'lambda for s3 event manager',
@@ -750,43 +755,49 @@ export class CdkOceanAgentStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event-manager')),
       timeout: cdk.Duration.seconds(60),      
       environment: {
-        sqsFifoUrl: queueUrl
+        sqsFifoUrl: JSON.stringify(queueUrl),
+        nqueue: String(LLM_for_multimodal.length)
       }
     });
-    queue.grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
-    
+    for(let i=0;i<LLM_for_multimodal.length;i++) {
+      queue[i].grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
+    }
+
     // Lambda for document manager
-    const lambdDocumentManager = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}`, {
-      description: 'S3 document manager',
-      functionName: `lambda-document-manager-for-${projectName}`,
-      role: roleLambdaWebsocket,
-      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
-      timeout: cdk.Duration.seconds(600),
-      memorySize: 2048,
-      environment: {
-        s3_bucket: s3Bucket.bucketName,
-        s3_prefix: s3_prefix,
-        enableParallelSummary: enableParallelSummary,
-        opensearch_account: opensearch_account,
-        opensearch_passwd: opensearch_passwd,    
-        opensearch_url: opensearch_url,
-        sqsUrl: queueUrl,
-        LLM_for_chat: JSON.stringify(LLM_for_chat),          
-        LLM_for_multimodal: JSON.stringify(claude3_sonnet),          
-        LLM_embedding: JSON.stringify(LLM_embedding),
-        LLM_for_contexual_retrieval: JSON.stringify(LLM_for_contexual_retrieval),          
-        roleArn: roleLambdaWebsocket.roleArn,
-        path: 'https://'+distribution.domainName+'/',           
-        max_object_size: String(max_object_size),
-        supportedFormat: supportedFormat,
-        enableHybridSearch: enableHybridSearch,
-        enableContexualRetrieval: enableContexualRetrieval,          
-        vectorIndexName: vectorIndexName,
-        enableParentDocumentRetrival: enableParentDocumentRetrival
-      }
-    });         
-    s3Bucket.grantReadWrite(lambdDocumentManager); // permission for s3
-    lambdDocumentManager.addEventSource(new SqsEventSource(queue)); // permission for SQS
+    let lambdDocumentManager:any[] = [];
+    for(let i=0;i<LLM_for_multimodal.length;i++) {
+      lambdDocumentManager[i] = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}-${i}`, {
+        description: 'S3 document manager',
+        functionName: `lambda-document-manager-for-${projectName}-${i}`,
+        role: roleLambdaWebsocket,
+        code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, '../../lambda-document-manager')),
+        timeout: cdk.Duration.seconds(600),
+        memorySize: 8192,
+        environment: {
+          s3_bucket: s3Bucket.bucketName,
+          s3_prefix: s3_prefix,
+          enableParallelSummary: enableParallelSummary,
+          opensearch_account: opensearch_account,
+          opensearch_passwd: opensearch_passwd,    
+          opensearch_url: opensearch_url,
+          sqsUrl: queueUrl[i],
+          LLM_for_chat: JSON.stringify(LLM_for_chat),          
+          LLM_for_multimodal: JSON.stringify(claude3_sonnet),          
+          LLM_embedding: JSON.stringify(LLM_embedding),
+          LLM_for_contexual_retrieval: JSON.stringify(LLM_for_contexual_retrieval),          
+          roleArn: roleLambdaWebsocket.roleArn,
+          path: 'https://'+distribution.domainName+'/',           
+          max_object_size: String(max_object_size),
+          supportedFormat: supportedFormat,
+          enableHybridSearch: enableHybridSearch,
+          enableContexualRetrieval: enableContexualRetrieval,          
+          vectorIndexName: vectorIndexName,
+          enableParentDocumentRetrival: enableParentDocumentRetrival
+        }
+      });         
+      s3Bucket.grantReadWrite(lambdDocumentManager[i]); // permission for s3
+      lambdDocumentManager[i].addEventSource(new SqsEventSource(queue[i])); // permission for SQS
+    }
     
     // s3 event source
     const s3PutEventSource = new lambdaEventSources.S3EventSource(s3Bucket, {
