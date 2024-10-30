@@ -750,8 +750,7 @@ export class CdkOceanAgentStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(__dirname, '../../lambda-s3-event-manager')),
       timeout: cdk.Duration.seconds(60),      
       environment: {
-        sqsFifoUrl: queueUrl,
-        nqueue: String(LLM_for_multimodal.length)
+        sqsFifoUrl: queueUrl
       }
     });
     queue.grantSendMessages(lambdaS3eventManager); // permision for SQS putItem

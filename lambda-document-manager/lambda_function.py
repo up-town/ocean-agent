@@ -488,6 +488,7 @@ def get_contexual_docs(whole_doc, splitted_docs):
     ])
 
     docs = []
+    contextualized_chunks = []
     for i, doc in enumerate(splitted_docs):        
         chat = get_contexual_retrieval_chat()
         
@@ -503,6 +504,8 @@ def get_contexual_docs(whole_doc, splitted_docs):
         output = response.content
         contextualized_chunk = output[output.find('<result>')+8:len(output)-9]
         
+        contextualized_chunks.append(contextualized_chunk)
+        
         print(f"--> {i}: original_chunk: {doc.page_content}")
         print(f"--> {i}: contexualized_chunk: {contextualized_chunk}")
         
@@ -512,7 +515,7 @@ def get_contexual_docs(whole_doc, splitted_docs):
                 metadata=doc.metadata
             )
         )
-    return docs
+    return docs, contextualized_chunks
     
 def add_to_opensearch(docs, key):    
     if len(docs) == 0:
@@ -546,7 +549,7 @@ def add_to_opensearch(docs, key):
         print('parent chunk[0]: ', parent_docs[0].page_content)
         
         if enableContexualRetrieval == 'true':    
-            parent_docs = get_contexual_docs(docs[-1], parent_docs)
+            parent_docs, contextualized_chunks = get_contexual_docs(docs[-1], parent_docs)
             print('parent contextual chunk[0]: ', parent_docs[0].page_content)
                 
         if len(parent_docs):
@@ -562,9 +565,9 @@ def add_to_opensearch(docs, key):
                 parent_doc_ids = vectorstore.add_documents(parent_docs, bulk_size = 10000)
                 print('parent_doc_ids: ', parent_doc_ids) 
                 print('len(parent_doc_ids): ', len(parent_doc_ids))
+                ids = parent_doc_ids
                 
-                child_docs = []
-                       
+                child_docs = []                       
                 for i, doc in enumerate(parent_docs):
                     _id = parent_doc_ids[i]
                     sub_docs = child_splitter.split_documents([doc])
@@ -573,19 +576,24 @@ def add_to_opensearch(docs, key):
                         _doc.metadata["doc_level"] = "child"
                         
                     child_docs.extend(sub_docs)
-                # print('child_docs: ', child_docs)
-                
-                print('child chunk[0]: ', child_docs[0].page_content)
-                
-                if enableContexualRetrieval == 'true':    
-                    child_docs = get_contexual_docs(docs[-1], child_docs)
-                    print('child contextual chunk[0]: ', child_docs[0].page_content)
-                
-                child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 10000)
-                print('child_doc_ids: ', child_doc_ids) 
-                print('len(child_doc_ids): ', len(child_doc_ids))
+                    # print('child_docs: ', child_docs)                
+                    print('child chunk[0]: ', child_docs[0].page_content)
                     
-                ids = parent_doc_ids+child_doc_ids
+                    if enableContexualRetrieval == 'true':    
+                        docs = []
+                        for doc in child_docs:
+                            docs.append(
+                                Document(
+                                    page_content=contextualized_chunks[i]+"\n\n"+doc.page_content,
+                                    metadata=doc.metadata
+                                )
+                            )
+                
+                    child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 10000)
+                    print('child_doc_ids: ', child_doc_ids) 
+                    print('len(child_doc_ids): ', len(child_doc_ids))
+                    
+                    ids += child_doc_ids
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)                
@@ -1042,7 +1050,7 @@ def load_document(file_type, key):
                             print(f"page[{i}] -> (used) width[{j}]: {bbox[2]-bbox[0]}, height[{j}]: {bbox[3]-bbox[1]}")                    
                         print(f"page[{i}] -> (image) width[{j}]: {info['width']}, height[{j}]: {info['height']}")
                         
-                    print(f"nImages[{i}]: {nImages[i]}")  # number of XObjects
+                    # print(f"nImages[{i}]: {nImages[i]}")  # number of XObjects
                     if nImages[i]>=4 or \
                         (nImages[i]>=1 and (width==0 and height==0)) or \
                         (nImages[i]>=1 and (width>=100 or height>=100)):

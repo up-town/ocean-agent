@@ -8,8 +8,6 @@ sqs_client = boto3.client('sqs')
 sqsFifoUrl = os.environ.get('sqsFifoUrl')
 print('sqsFifoUrl: ', sqsFifoUrl)
 
-nqueue = os.environ.get('nqueue')
-
 def lambda_handler(event, context):
     print('event: ', json.dumps(event))
 
