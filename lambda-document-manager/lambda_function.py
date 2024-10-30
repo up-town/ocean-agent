@@ -34,7 +34,7 @@ s3_prefix = os.environ.get('s3_prefix')
 
 meta_prefix = "metadata/"
 enableParallelSummary = os.environ.get('enableParallelSummary')
-enalbeParentDocumentRetrival = os.environ.get('enalbeParentDocumentRetrival')
+enableParentDocumentRetrival = os.environ.get('enableParentDocumentRetrival')
 
 opensearch_account = os.environ.get('opensearch_account')
 opensearch_passwd = os.environ.get('opensearch_passwd')
@@ -526,7 +526,7 @@ def add_to_opensearch(docs, key):
     delete_document_if_exist(metadata_key)
         
     ids = []
-    if enalbeParentDocumentRetrival == 'true':
+    if enableParentDocumentRetrival == 'true':
         parent_splitter = RecursiveCharacterTextSplitter(
             chunk_size=2000,
             chunk_overlap=100,

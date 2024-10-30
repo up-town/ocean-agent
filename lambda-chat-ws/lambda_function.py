@@ -1901,8 +1901,7 @@ def retrieve(query: str, subject_company: str):
         boolean_filter = {
             "bool": {
                 "filter":[
-                    {"match" : {"metadata.subject_company":subject_company}},
-                    {"term" : {"metadata.doc_level":"child"}}
+                    {"match" : {"metadata.subject_company":subject_company}}
                 ]
             }
         }

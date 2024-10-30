@@ -791,7 +791,8 @@ export class CdkOceanAgentStack extends cdk.Stack {
           supportedFormat: supportedFormat,
           enableHybridSearch: enableHybridSearch,
           enableContexualRetrieval: enableContexualRetrieval,          
-          vectorIndexName: vectorIndexName
+          vectorIndexName: vectorIndexName,
+          enableParentDocumentRetrival: enableParentDocumentRetrival
         }
       });         
       s3Bucket.grantReadWrite(lambdDocumentManager[i]); // permission for s3
