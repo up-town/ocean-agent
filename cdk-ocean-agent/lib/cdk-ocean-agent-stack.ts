@@ -757,7 +757,7 @@ export class CdkOceanAgentStack extends cdk.Stack {
     queue.grantSendMessages(lambdaS3eventManager); // permision for SQS putItem
     
     // Lambda for document manager
-    const lambdDocumentManager = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}-${i}`, {
+    const lambdDocumentManager = new lambda.DockerImageFunction(this, `lambda-document-manager-for-${projectName}`, {
       description: 'S3 document manager',
       functionName: `lambda-document-manager-for-${projectName}`,
       role: roleLambdaWebsocket,
