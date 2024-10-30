@@ -532,7 +532,8 @@ def add_to_opensearch(docs, key):
         parent_splitter = RecursiveCharacterTextSplitter(
             chunk_size=2000,
             chunk_overlap=100,
-            separators=["\n\n", "\n", ".", " ", ""],
+            #separators=["\n\n", "\n", ".", " ", ""],
+            separators=["\n\n", "\n", ""],
             length_function = len,
         )
         child_splitter = RecursiveCharacterTextSplitter(
@@ -600,7 +601,8 @@ def add_to_opensearch(docs, key):
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=100,
-            separators=["\n\n", "\n", ".", " ", ""],
+            #separators=["\n\n", "\n", ".", " ", ""],
+            separators=["\n\n", "\n", ""],
             length_function = len,
         ) 
         
