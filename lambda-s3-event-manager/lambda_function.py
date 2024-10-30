@@ -5,8 +5,8 @@ import uuid
 import random
 
 sqs_client = boto3.client('sqs')
-sqsFifoUrl = json.loads(os.environ.get('sqsFifoUrl'))
-print('sqsFifoUrl: ', json.dumps(sqsFifoUrl))
+sqsFifoUrl = os.environ.get('sqsFifoUrl')
+print('sqsFifoUrl: ', sqsFifoUrl)
 
 nqueue = os.environ.get('nqueue')
 
@@ -14,9 +14,6 @@ def lambda_handler(event, context):
     print('event: ', json.dumps(event))
 
     for record in event['Records']:
-        idx = random.randrange(0,int(nqueue))
-        print('idx: ', idx)
-        
         eventId = str(uuid.uuid1())
         print('eventId: ', eventId)
                 
@@ -35,10 +32,10 @@ def lambda_handler(event, context):
         
         # push to SQS
         try:
-            print('sqsFifoUrl: ', sqsFifoUrl[idx])            
+            print('sqsFifoUrl: ', sqsFifoUrl)            
             
             sqs_client.send_message(  # fifo
-                QueueUrl=sqsFifoUrl[idx], 
+                QueueUrl=sqsFifoUrl, 
                 MessageAttributes={},
                 MessageDeduplicationId=eventId,
                 MessageGroupId="s3event",
