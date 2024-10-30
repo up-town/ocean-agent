@@ -216,9 +216,9 @@ def tavily_search(query, k):
 # result = tavily_search('what is LangChain', 2)
 # print('search result: ', result)
 
-def reflesh_opensearch_index():
+def refresh_opensearch_index():
     #########################
-    # opensearch index (reflesh)
+    # opensearch index (refresh)
     #########################
     print(f"deleting opensearch index... {vectorIndexName}") 
     
@@ -2719,11 +2719,11 @@ def getResponse(connectionId, jsonBody):
         msg += f"current model: {modelId}"
         print('model lists: ', msg)    
         
-    elif type == 'text' and body[:21] == 'reflesh current index':
-        # reflesh index
+    elif type == 'text' and body[:21] == 'refresh current index':
+        # refresh index
         isTyping(connectionId, requestId, "")
-        reflesh_opensearch_index()
-        msg = "The index was refleshed in OpenSearch."
+        refresh_opensearch_index()
+        msg = "The index was refreshed in OpenSearch."
         sendResultMessage(connectionId, requestId, msg)
         
     else:             
