@@ -547,8 +547,10 @@ def add_to_opensearch(docs, key):
         print('len(parent_docs): ', len(parent_docs))
         
         print('parent chunk[0]: ', parent_docs[0].page_content)
-        parent_docs, contexualized_chunks = get_contexual_docs(docs[-1], parent_docs)
-        print('parent contextual chunk[0]: ', parent_docs[0].page_content)
+        
+        if enableContexualRetrieval == 'true':
+            parent_docs, contexualized_chunks = get_contexual_docs(docs[-1], parent_docs)
+            print('parent contextual chunk[0]: ', parent_docs[0].page_content)
                 
         if len(parent_docs):
             # print('parent_docs[0]: ', parent_docs[0])
@@ -557,42 +559,38 @@ def add_to_opensearch(docs, key):
             
             for i, doc in enumerate(parent_docs):
                 doc.metadata["doc_level"] = "parent"
-                # print(f"parent_docs[{i}]: {doc}")
+                print(f"parent_docs[{i}]: {doc}")
                     
             try:        
                 parent_doc_ids = vectorstore.add_documents(parent_docs, bulk_size = 10000)
                 print('parent_doc_ids: ', parent_doc_ids) 
                 print('len(parent_doc_ids): ', len(parent_doc_ids))
                 ids = parent_doc_ids
-                
-                child_docs = []
-                       
+                                
                 for i, doc in enumerate(parent_docs):
                     _id = parent_doc_ids[i]
                     sub_docs = child_splitter.split_documents([doc])
                     for _doc in sub_docs:
                         _doc.metadata["parent_doc_id"] = _id
-                        _doc.metadata["doc_level"] = "child"
-                        
-                    child_docs.extend(sub_docs)
-                    # print('child_docs: ', child_docs)                
-                    print('child chunk[0]: ', child_docs[0].page_content)
+                        _doc.metadata["doc_level"] = "child"                        
+                    print('sub_docs[0]: ', sub_docs[0].page_content)
                     
                     if enableContexualRetrieval == 'true':
                         docs = []
-                        for doc in child_docs:
+                        for doc in sub_docs:
                             docs.append(
                                 Document(
                                     page_content=contexualized_chunks[i]+"\n\n"+doc.page_content,
                                     metadata=doc.metadata
                                 )
                             )
+                        sub_docs = docs
                     
-                        child_doc_ids = vectorstore.add_documents(docs, bulk_size = 10000)
-                        print('child_doc_ids: ', child_doc_ids) 
-                        print('len(child_doc_ids): ', len(child_doc_ids))
-                        
-                        ids += child_doc_ids
+                    child_doc_ids = vectorstore.add_documents(sub_docs, bulk_size = 10000)
+                    print('child_doc_ids: ', child_doc_ids)
+                    print('len(child_doc_ids): ', len(child_doc_ids))
+
+                    ids += child_doc_ids
             except Exception:
                 err_msg = traceback.format_exc()
                 print('error message: ', err_msg)                
