@@ -775,6 +775,78 @@ def get_parent_content(parent_doc_id):
     
     return source['text'], metadata['name'], url
 
+def lexical_search(query, top_k):
+    # lexical search (keyword)
+    min_match = 0
+    
+    query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "match": {
+                            "text": {
+                                "query": query,
+                                "minimum_should_match": f'{min_match}%',
+                                "operator":  "or",
+                            }
+                        }
+                    },
+                ],
+                "filter": [
+                ]
+            }
+        }
+    }
+
+    response = os_client.search(
+        body=query,
+        index=index_name
+    )
+    # print('lexical query result: ', json.dumps(response))
+        
+    docs = []
+    for i, document in enumerate(response['hits']['hits']):
+        if i>=top_k: 
+            break
+                    
+        excerpt = document['_source']['text']
+        
+        name = document['_source']['metadata']['name']
+        # print('name: ', name)
+
+        page = ""
+        if "page" in document['_source']['metadata']:
+            page = document['_source']['metadata']['page']
+        
+        url = ""
+        if "url" in document['_source']['metadata']:
+            url = document['_source']['metadata']['url']            
+        
+        docs.append(
+                Document(
+                    page_content=excerpt,
+                    metadata={
+                        'name': name,
+                        'url': url,
+                        'page': page,
+                        'from': 'lexical'
+                    },
+                )
+            )
+    
+    for i, doc in enumerate(docs):
+        #print('doc: ', doc)
+        #print('doc content: ', doc.page_content)
+        
+        if len(doc.page_content)>=100:
+            text = doc.page_content[:100]
+        else:
+            text = doc.page_content            
+        print(f"--> lexical search doc[{i}]: {text}, metadata:{doc.metadata}")   
+        
+    return docs
+
 def get_answer_using_opensearch(chat, text, connectionId, requestId):    
     global reference_docs
     
@@ -844,6 +916,13 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
                     },
                 )
             )
+    
+    if enableHybridSearch == 'true':
+        relevant_docs_from_lexical = lexical_search(text, top_k)    
+        
+        # print('the number of docs (lexical search): ', len(relevant_docs_from_lexical))
+        for i, document in enumerate(relevant_docs_from_lexical):
+            print(f'## Document(opensearch-lexical) {i+1}: {document}')
 
     isTyping(connectionId, requestId, "grading...")
     
@@ -1610,8 +1689,8 @@ def search_by_opensearch(keyword: str) -> str:
                 )
             )
     
-    #if enableHybridSearch == 'true':
-    #    relevant_docs = relevant_docs + lexical_search_for_tool(keyword, top_k)
+    if enableHybridSearch == 'true':
+        relevant_docs = relevant_docs + lexical_search(keyword, top_k)
     
     print('doc length: ', len(relevant_docs))
                 

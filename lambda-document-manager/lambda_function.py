@@ -408,32 +408,32 @@ def create_nori_index():
             "index.knn": True,
             "index.knn.algo_param.ef_search": 512,
             'analysis': {
-                'analyzer': {
-                    'my_analyzer': {
-                        'char_filter': ['html_strip'], 
-                        'tokenizer': 'nori',
-                        'filter': ['nori_number','lowercase','trim','my_nori_part_of_speech'],
-                        'type': 'custom'
-                    }
-                },
-                'tokenizer': {
-                    'nori': {
-                        'decompound_mode': 'mixed',
-                        'discard_punctuation': 'true',
-                        'type': 'nori_tokenizer'
-                    }
-                },
-                "filter": {
-                    "my_nori_part_of_speech": {
-                        "type": "nori_part_of_speech",
-                        "stoptags": [
-                                "E", "IC", "J", "MAG", "MAJ",
-                                "MM", "SP", "SSC", "SSO", "SC",
-                                "SE", "XPN", "XSA", "XSN", "XSV",
-                                "UNA", "NA", "VSV"
-                        ]
-                    }
-                }
+                #'analyzer': {
+                #    'my_analyzer': {
+                #        'char_filter': ['html_strip'], 
+                #        'tokenizer': 'nori',
+                #        'filter': ['nori_number','lowercase','trim','my_nori_part_of_speech'],
+                #        'type': 'custom'
+                #    }
+                #},
+                #'tokenizer': {
+                #    'nori': {
+                #        'decompound_mode': 'mixed',
+                #        'discard_punctuation': 'true',
+                #        'type': 'nori_tokenizer'
+                #    }
+                #},
+                #"filter": {
+                #    "my_nori_part_of_speech": {
+                #        "type": "nori_part_of_speech",
+                #        "stoptags": [
+                #                "E", "IC", "J", "MAG", "MAJ",
+                #                "MM", "SP", "SSC", "SSO", "SC",
+                #                "SE", "XPN", "XSA", "XSN", "XSV",
+                #                "UNA", "NA", "VSV"
+                #        ]
+                #    }
+                #}
             },
         },
         'mappings': {
@@ -610,8 +610,8 @@ def add_to_opensearch(docs, key):
         if len(documents):            
             if enableContexualRetrieval == 'true':                        
                 print('chunk[0]: ', documents[0].page_content)             
-                documents = get_contexual_docs(docs[-1], documents)
-                print('contextual chunk[0]: ', documents[0].page_content)  
+                documents, contexualized_chunks = get_contexual_docs(docs[-1], documents)
+                print('contextual chunks[0]: ', contexualized_chunks[0])  
             else:
                 print('documents[0]: ', documents[0])
             
