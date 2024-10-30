@@ -216,9 +216,9 @@ def tavily_search(query, k):
 # result = tavily_search('what is LangChain', 2)
 # print('search result: ', result)
 
-def reflash_opensearch_index():
+def reflesh_opensearch_index():
     #########################
-    # opensearch index (reflash)
+    # opensearch index (reflesh)
     #########################
     print(f"deleting opensearch index... {vectorIndexName}") 
     
@@ -2719,11 +2719,11 @@ def getResponse(connectionId, jsonBody):
         msg += f"current model: {modelId}"
         print('model lists: ', msg)    
         
-    elif type == 'text' and body[:21] == 'reflash current index':
-        # reflash index
+    elif type == 'text' and body[:21] == 'reflesh current index':
+        # reflesh index
         isTyping(connectionId, requestId, "")
-        reflash_opensearch_index()
-        msg = "The index was reflashed in OpenSearch."
+        reflesh_opensearch_index()
+        msg = "The index was refleshed in OpenSearch."
         sendResultMessage(connectionId, requestId, msg)
         
     else:             
@@ -2746,6 +2746,12 @@ def getResponse(connectionId, jsonBody):
                     msg = general_conversation(connectionId, requestId, chat, text)                  
                 
                 elif convType == 'rag-opensearch':   # RAG - Vector
+                    msg = get_answer_using_opensearch(chat, text, connectionId, requestId)
+                    
+                    if reference_docs:
+                        reference = get_references(reference_docs)
+                
+                elif convType == 'rag-opensearch-chat':   # RAG - Vector
                     revised_question = revise_question(connectionId, requestId, chat, text)     
                     print('revised_question: ', revised_question)  
                     
