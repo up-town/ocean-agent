@@ -542,10 +542,12 @@ def add_to_opensearch(docs, key):
 
         parent_docs = parent_splitter.split_documents(docs)
         print('len(parent_docs): ', len(parent_docs))
-        
+                
         print('parent chunk[0]: ', parent_docs[0].page_content)
-        parent_docs = get_contexual_docs(docs[-1], parent_docs)
-        print('parent contextual chunk[0]: ', parent_docs[0].page_content)
+        
+        if enableContexualRetrieval == 'true':    
+            parent_docs = get_contexual_docs(docs[-1], parent_docs)
+            print('parent contextual chunk[0]: ', parent_docs[0].page_content)
                 
         if len(parent_docs):
             # print('parent_docs[0]: ', parent_docs[0])
@@ -574,8 +576,10 @@ def add_to_opensearch(docs, key):
                 # print('child_docs: ', child_docs)
                 
                 print('child chunk[0]: ', child_docs[0].page_content)
-                child_docs = get_contexual_docs(docs[-1], child_docs)
-                print('child contextual chunk[0]: ', child_docs[0].page_content)
+                
+                if enableContexualRetrieval == 'true':    
+                    child_docs = get_contexual_docs(docs[-1], child_docs)
+                    print('child contextual chunk[0]: ', child_docs[0].page_content)
                 
                 child_doc_ids = vectorstore.add_documents(child_docs, bulk_size = 10000)
                 print('child_doc_ids: ', child_doc_ids) 
