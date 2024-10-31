@@ -924,6 +924,8 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
         for i, document in enumerate(relevant_docs_from_lexical):
             print(f'## Document(opensearch-lexical) {i+1}: {document}')
 
+        relevant_docs += relevant_docs_from_lexical
+
     isTyping(connectionId, requestId, "grading...")
     
     filtered_docs = grade_documents(text, relevant_docs) # grading
