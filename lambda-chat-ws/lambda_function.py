@@ -1007,7 +1007,7 @@ def get_references(docs):
         
         if len(excerpt)<5000:
             if page:
-                reference = reference + f"{cnt}. {page}page, <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
+                reference = reference + f"{cnt}. {page} page, <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
             else:
                 reference = reference + f"{cnt}. <a href={url} target=_blank>{name}</a>, {sourceType}, <a href=\"#\" onClick=\"alert(`{excerpt}`)\">관련문서</a>\n"
             cnt = cnt + 1
