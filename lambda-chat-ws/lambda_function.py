@@ -1690,9 +1690,10 @@ def search_by_opensearch(keyword: str) -> str:
     
     print('doc length: ', len(relevant_docs))
                 
-    filtered_docs = grade_documents(keyword, relevant_docs)  # grading
+    # filtered_docs = grade_documents(keyword, relevant_docs)  # grading
     
-    filtered_docs = check_duplication(filtered_docs) # check duplication
+    # filtered_docs = check_duplication(filtered_docs) # check duplication
+    filtered_docs = relevant_docs
     
     for i, doc in enumerate(filtered_docs):
         if len(doc.page_content)>=100:
@@ -2005,9 +2006,10 @@ def retrieve(query: str, subject_company: str):
                     },
                 )
             )
-    filtered_docs = grade_documents(query, docs) # grading
+    #filtered_docs = grade_documents(query, docs) # grading
 
-    filtered_docs = check_duplication(filtered_docs) # check duplication
+    #filtered_docs = check_duplication(filtered_docs) # check duplication
+    filtered_docs = docs
             
     return filtered_docs
 
