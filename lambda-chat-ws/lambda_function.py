@@ -918,14 +918,8 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
             )
     
     if enableHybridSearch == 'true':
-        relevant_docs_from_lexical = lexical_search(text, top_k)    
+        relevant_docs += lexical_search(text, top_k)    
         
-        # print('the number of docs (lexical search): ', len(relevant_docs_from_lexical))
-        for i, document in enumerate(relevant_docs_from_lexical):
-            print(f'## Document(opensearch-lexical) {i+1}: {document}')
-
-        relevant_docs += relevant_docs_from_lexical
-
     isTyping(connectionId, requestId, "grading...")
     
     filtered_docs = grade_documents(text, relevant_docs) # grading
@@ -1692,7 +1686,7 @@ def search_by_opensearch(keyword: str) -> str:
             )
     
     if enableHybridSearch == 'true':
-        relevant_docs = relevant_docs + lexical_search(keyword, top_k)
+        relevant_docs += lexical_search(keyword, top_k)
     
     print('doc length: ', len(relevant_docs))
                 
