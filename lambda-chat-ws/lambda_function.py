@@ -705,7 +705,8 @@ def get_documents_from_opensearch(vectorstore_opensearch, query, top_k):
     try:
         result = vectorstore_opensearch.similarity_search_with_score(
             query = query,
-            k = top_k*2,  
+            #k = top_k*2,  
+            k = top_k,  
             search_type="script_scoring",
             pre_filter={"term": {"metadata.doc_level": "child"}}
         )    
@@ -851,7 +852,7 @@ def get_answer_using_opensearch(chat, text, connectionId, requestId):
     global reference_docs
     
     msg = ""
-    top_k = 4
+    top_k = 2
     relevant_docs = []
     
     bedrock_embedding = get_embedding()
@@ -1884,7 +1885,8 @@ def get_documents_from_opensearch_for_subject_company(vectorstore_opensearch, qu
     }          
     result = vectorstore_opensearch.similarity_search_with_score(
         query = query,
-        k = top_k*2,
+        #k = top_k*2,
+        k = top_k,
         search_type="script_scoring",
         pre_filter = boolean_filter
     )    
